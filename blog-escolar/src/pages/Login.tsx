@@ -4,7 +4,7 @@ import React, { useState } from "react";
 
 const Login: React.FC = () => {
   // Estados para armazenar usuário e senha digitados
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -17,7 +17,7 @@ const Login: React.FC = () => {
     setError("");
     setSuccess("");
     try {
-      await login(username, password);
+      await login(email, password);
       setTimeout(() => {
         navigate("/"); // Redireciona para a Home após login
       }, 1000);
@@ -33,11 +33,11 @@ const Login: React.FC = () => {
       {success && <p style={{ color: "green" }}>{success}</p>}
       <div>
         <label>
-          Usuário:
+          Email:
           <input
-            type="text"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
             required
           />
         </label>

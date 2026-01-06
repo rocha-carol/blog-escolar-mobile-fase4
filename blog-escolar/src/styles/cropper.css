@@ -1,0 +1,16 @@
+/* Estilo básico para o cropper de imagem */
+.crop-container {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  background: #333;
+  margin: 16px auto;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.crop-controls {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}

@@ -29,9 +29,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   React.useEffect(() => {
     const savedToken = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
-    if (savedToken && savedUser) {
+    if (savedToken && savedUser && savedUser !== "undefined") {
       setToken(savedToken);
-      setUser(JSON.parse(savedUser) as UserType);
+      try {
+        setUser(JSON.parse(savedUser) as UserType);
+      } catch {
+        setUser(null);
+        localStorage.removeItem("user");
+      }
     }
   }, []);
 
@@ -39,9 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     const response = await loginService(email, password);
     setToken(response.token);
-    setUser(response.user);
+    setUser(response.usuario);
     localStorage.setItem("token", response.token);
-    localStorage.setItem("user", JSON.stringify(response.user));
+    localStorage.setItem("user", JSON.stringify(response.usuario));
   };
 
   // Função de logout

@@ -1,0 +1,30 @@
+import React from "react";
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, info: any) {
+    // Você pode logar o erro em algum serviço externo aqui
+    console.error("Erro capturado pelo ErrorBoundary:", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ textAlign: "center", marginTop: 80 }}>
+          <h1>Ocorreu um erro inesperado.</h1>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;

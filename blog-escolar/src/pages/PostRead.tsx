@@ -1,26 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { getPosts } from "../services/postService";
+import { useParams, useNavigate } from "react-router-dom";
+import { getPostById } from "../services/postService";
 import type { Post } from "../services/postService";
 import "../styles/PostRead.css";
+import "../styles/center.css";
 
 // O componente PostRead depende do useParams para saber qual post mostrar,
 // e do getPosts para buscar os dados do backend.
 const PostRead: React.FC = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // Busca o post pelo id assim que o componente carrega
   useEffect(() => {
-    getPosts()
-      .then(posts => {
-        const found = posts.find(p => p.id === id);
-        if (found) setPost(found);
-        else setError("Post não encontrado.");
-      })
-      .catch(() => setError("Erro ao carregar post."))
+    if (!id) {
+      setError("ID inválido.");
+      setLoading(false);
+      return;
+    }
+    getPostById(id as string)
+      .then(setPost)
+      .catch(() => setError("Post não encontrado."))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -29,7 +32,7 @@ const PostRead: React.FC = () => {
   if (!post) return null;
 
   return (
-    <div>
+    <div className="page-center">
       {/* Topo roxo com título, subtítulo e infos */}
       <div className="postread-topo">
         <div className="postread-titulo">{post.titulo}</div>
@@ -46,6 +49,12 @@ const PostRead: React.FC = () => {
       {/* Conteúdo do post */}
       <div className="postread-conteudo">
         {post.conteudo}
+      </div>
+      {/* Botão de voltar */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
+        <button onClick={() => navigate(-1)} style={{ padding: '10px 24px', borderRadius: 8, background: '#7c4dbe', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>
+          Voltar
+        </button>
       </div>
     </div>
   );

@@ -98,8 +98,7 @@ describe("Testes de Posts", () => {
             .send({
                 email: "professor@teste.com",
                 senha: "123456",
-                titulo: "Rascunho",
-                conteudo: "Conteúdo do rascunho",
+                // Removido teste de rascunho
                 areaDoConhecimento: "Tecnologias"
             });
 

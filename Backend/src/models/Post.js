@@ -8,6 +8,20 @@ const PostSchema = new mongoose.Schema({
       values: ["Linguagens", "Matemática", "Ciências da Natureza", "Ciências Humanas", "Tecnologias"],
     }
   },
+  autoria: {
+    type: String,
+    required: true,
+    default: "Desconhecido"
+  },
+  imagem: {
+    type: String,
+    default: null
+  },
+  status: {
+    type: String,
+    enum: ["publicado"],
+    default: "publicado"
+  }
 }, {
   versionKey: false,
   timestamps: true

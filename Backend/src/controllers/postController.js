@@ -15,19 +15,53 @@ class PostsController {
   // Listar todos os posts
   static async listarPosts(req, res) {
     try {
-      // Busca posts sem usar populate de autor
-      const posts = await Posts.find().lean().sort({ createdAt: -1 });
+      // Suporte a paginação
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+
+      // Filtra por autoria se parâmetro autor for fornecido
+      let filtro = {};
+      if (req.query.autor) {
+        filtro = { autoria: req.query.autor };
+      }
+
+      const total = await Posts.countDocuments(filtro);
+      const posts = await Posts.find(filtro)
+        .lean()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
 
       const postsFormatados = posts.map(post => ({
         id: post._id,
         titulo: post.titulo,
         conteudo: post.conteudo.substring(0, 200) + "...",
         areaDoConhecimento: post.areaDoConhecimento,
-        CriadoEm: formatarData(post.createdAt),
-        AtualizadoEm: post.updatedAt ? formatarData(post.updatedAt) : undefined
+        status: post.status || "publicado",
+        CriadoEm: post.createdAt ? new Date(post.createdAt).toLocaleDateString('pt-BR') : undefined,
+        CriadoEmHora: post.createdAt ? (() => {
+          const d = new Date(post.createdAt);
+          const h = d.getHours().toString().padStart(2, '0');
+          const m = d.getMinutes().toString().padStart(2, '0');
+          return `${h}h${m}`;
+        })() : undefined,
+        AtualizadoEm: post.updatedAt ? new Date(post.updatedAt).toLocaleDateString('pt-BR') : undefined,
+        AtualizadoEmHora: post.updatedAt ? (() => {
+          const d = new Date(post.updatedAt);
+          const h = d.getHours().toString().padStart(2, '0');
+          const m = d.getMinutes().toString().padStart(2, '0');
+          return `${h}h${m}`;
+        })() : undefined
       }));
 
-      res.json(postsFormatados);
+      res.json({
+        posts: postsFormatados,
+        total,
+        page,
+        limit,
+        hasMore: skip + posts.length < total
+      });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -45,6 +79,7 @@ class PostsController {
         titulo: post.titulo,
         conteudo: post.conteudo,
         areaDoConhecimento: post.areaDoConhecimento,
+        status: post.status || "publicado",
         CriadoEm: formatarData(post.createdAt),
         AtualizadoEm: post.updatedAt ? formatarData(post.updatedAt) : undefined
       });
@@ -56,16 +91,26 @@ class PostsController {
   // Criar post (somente professores)
   static async criarPost(req, res) {
     try {
-      const { titulo, conteudo, areaDoConhecimento } = req.body;
+      const { titulo, conteudo, areaDoConhecimento, status } = req.body;
 
       // O usuário que vem do token
       const usuario = await Usuario.findById(req.usuario.id);
       if (!usuario) return res.status(404).json({ message: "Usuário não encontrado" });
 
+      // Se imagem foi enviada, salva buffer ou caminho (ajuste conforme sua persistência)
+      let imagemUrl = null;
+      if (req.file) {
+        // Exemplo: salva como base64 no banco (não recomendado para produção)
+        imagemUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      }
+
       const novoPost = new Posts({
         titulo,
         conteudo,
         areaDoConhecimento,
+        status: status || "publicado",
+        autoria: usuario.nome,
+        imagem: imagemUrl
       });
 
       await novoPost.save();
@@ -75,6 +120,8 @@ class PostsController {
         titulo: novoPost.titulo,
         conteudo: novoPost.conteudo.substring(0, 100) + "...",
         areaDoConhecimento: novoPost.areaDoConhecimento,
+        status: novoPost.status,
+        imagem: novoPost.imagem,
         CriadoEm: formatarData(novoPost.createdAt),
         AtualizadoEm: novoPost.updatedAt ? formatarData(novoPost.updatedAt) : undefined
       });
@@ -87,13 +134,17 @@ class PostsController {
   static async editarPost(req, res) {
     try {
       const { id } = req.params;
-      const { titulo, conteudo } = req.body;
+      const { titulo, conteudo, areaDoConhecimento } = req.body;
 
       const post = await Posts.findById(id);
       if (!post) return res.status(404).json({ message: "Post não encontrado" });
 
       if (titulo) post.titulo = titulo;
       if (conteudo) post.conteudo = conteudo;
+      if (areaDoConhecimento) post.areaDoConhecimento = areaDoConhecimento;
+      if (req.file) {
+        post.imagem = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      }
 
       await post.save();
 
@@ -102,7 +153,8 @@ class PostsController {
         titulo: post.titulo,
         conteudo: post.conteudo,
         areaDoConhecimento: post.areaDoConhecimento,
-        "atualizado em": formatarData(post.updatedAt)
+        imagem: post.imagem,
+        atualizadoEm: formatarData(post.updatedAt)
       });
     } catch (err) {
       res.status(400).json({ message: err.message });

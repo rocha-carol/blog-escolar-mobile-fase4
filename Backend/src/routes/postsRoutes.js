@@ -1,6 +1,7 @@
 import express from "express";
 import PostsController from "../controllers/postController.js";
 import { validarProfessor } from "../middleware/validarProfessor.js";
+import uploadImagem from "../middleware/uploadImagem.js";
 
 const postsRoutes = express.Router();
 
@@ -197,7 +198,8 @@ postsRoutes.get("/:id", PostsController.lerPost);
  *                   type: string
  *                   example: Usuário não cadastrado ou senha incorreta
  */
-postsRoutes.post("/", validarProfessor, PostsController.criarPost);
+// Adiciona middleware de upload para tratar imagem
+postsRoutes.post("/", validarProfessor, uploadImagem.single("imagem"), PostsController.criarPost);
 
 /**
  * @swagger
@@ -249,7 +251,7 @@ postsRoutes.post("/", validarProfessor, PostsController.criarPost);
  *                   type: string
  *                   example: Post não encontrado
  */
-postsRoutes.put("/:id", validarProfessor, PostsController.editarPost);
+postsRoutes.put("/:id", validarProfessor, uploadImagem.single("imagem"), PostsController.editarPost);
 
 /**
  * @swagger
