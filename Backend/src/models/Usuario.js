@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 
 const usuarioSchema = new mongoose.Schema({
   nome: { type: String, required: true },

@@ -2,6 +2,8 @@ import { Posts } from "../models/Post.js";
 import { Usuario } from "../models/Usuario.js";
 import { Comentario } from "../models/Comentario.js";
 
+const MAX_PREVIEW_LENGTH = 200;
+
 // Função auxiliar para formatar data
 function formatarData(data) {
   const d = new Date(data);
@@ -11,14 +13,27 @@ function formatarData(data) {
   return `${dia}/${mes}/${ano}`;
 }
 
+function criarResumo(conteudo) {
+  if (!conteudo) return "";
+  if (conteudo.length <= MAX_PREVIEW_LENGTH) return conteudo;
+  return `${conteudo.substring(0, MAX_PREVIEW_LENGTH)}...`;
+}
+
+function parseNumeroPositivo(valor, fallback, max = null) {
+  const numero = Number.parseInt(valor, 10);
+  if (Number.isNaN(numero) || numero <= 0) return fallback;
+  if (max !== null) return Math.min(numero, max);
+  return numero;
+}
+
 class PostsController {
 
   // Listar todos os posts
   static async listarPosts(req, res) {
     try {
       // Suporte a paginação
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
+      const page = parseNumeroPositivo(req.query.page, 1);
+      const limit = parseNumeroPositivo(req.query.limit, 10, 50);
       const skip = (page - 1) * limit;
 
       // Filtra por autoria se parâmetro autor for fornecido
@@ -42,7 +57,7 @@ class PostsController {
           id: post._id,
           titulo: post.titulo,
           autor: post.autoria,
-          conteudo: post.conteudo.substring(0, 200) + "...",
+          conteudo: criarResumo(post.conteudo),
           areaDoConhecimento: post.areaDoConhecimento,
           status: post.status || "publicado",
           imagem: post.imagem,
@@ -103,6 +118,10 @@ class PostsController {
     try {
       const { titulo, conteudo, areaDoConhecimento, status } = req.body;
 
+      if (!titulo || !conteudo || !areaDoConhecimento) {
+        return res.status(400).json({ message: "Título, conteúdo e área do conhecimento são obrigatórios" });
+      }
+
       // O usuário que vem do token
       const usuario = await Usuario.findById(req.usuario.id);
       if (!usuario) return res.status(404).json({ message: "Usuário não encontrado" });
@@ -129,7 +148,7 @@ class PostsController {
         message: "Post criado com sucesso",
         titulo: novoPost.titulo,
         autor: novoPost.autoria,
-        conteudo: novoPost.conteudo.substring(0, 100) + "...",
+        conteudo: criarResumo(novoPost.conteudo),
         areaDoConhecimento: novoPost.areaDoConhecimento,
         status: novoPost.status,
         imagem: novoPost.imagem,
@@ -145,14 +164,19 @@ class PostsController {
   static async editarPost(req, res) {
     try {
       const { id } = req.params;
-      const { titulo, conteudo, areaDoConhecimento } = req.body;
+      const { titulo, conteudo, areaDoConhecimento, status } = req.body;
 
       const post = await Posts.findById(id);
       if (!post) return res.status(404).json({ message: "Post não encontrado" });
 
+      if (!titulo && !conteudo && !areaDoConhecimento && !status && !req.file) {
+        return res.status(400).json({ message: "Nenhum dado enviado para atualização" });
+      }
+
       if (titulo) post.titulo = titulo;
       if (conteudo) post.conteudo = conteudo;
       if (areaDoConhecimento) post.areaDoConhecimento = areaDoConhecimento;
+      if (status) post.status = status;
       if (req.file) {
         post.imagem = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       }
@@ -207,7 +231,7 @@ class PostsController {
       const resultado = posts.map(post => ({
         titulo: post.titulo,
         autor: post.autoria,
-        conteudo: post.conteudo.substring(0, 200) + (post.conteudo.length > 200 ? "..." : ""),
+        conteudo: criarResumo(post.conteudo),
         areaDoConhecimento: post.areaDoConhecimento,
         "criado em": formatarData(post.createdAt)
       }));
