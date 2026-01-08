@@ -1,22 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import api from "../services/authService";
+import { deletePost, getPosts } from "../services/postService";
+import type { Post } from "../services/postService";
 import { Link } from "react-router-dom";
-
-// Estrutura de um post para listagem
-interface Post {
-  id: string;
-  titulo: string;
-  conteudo: string;
-  status: string;
-  CriadoEm?: string;
-  AtualizadoEm?: string;
-  CriadoEmHora?: string;
-  AtualizadoEmHora?: string;
-  imagem?: string;
-  areaDoConhecimento?: string;
-}
+import useQuery from "../hooks/useQuery";
 
 const normalizarTexto = (valor: string) =>
   valor
@@ -26,9 +14,7 @@ const normalizarTexto = (valor: string) =>
 
 const GerenciarPostagens: React.FC = () => {
   const { user } = useAuth();
-  const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
   const [search, setSearch] = useState("");
   // Removidos areaFilter e order pois não são mais usados
@@ -37,62 +23,54 @@ const GerenciarPostagens: React.FC = () => {
   const [toast, setToast] = useState<string | null>(null);
   const [modalPost, setModalPost] = useState<Post | null>(null);
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    let cancelado = false;
-    const fetchPosts = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        let url = `/posts?page=${page}&limit=${limit}`;
-        if (user && user.nome) {
-          url += `&autor=${encodeURIComponent(user.nome)}`;
-        }
-        const response = await api.get(url);
-        let lista = response.data.posts || [];
-        // Ordenação por data (sempre decrescente)
-        lista = lista.sort((a: Post, b: Post) => {
-          const dateA = new Date(a.AtualizadoEm || a.CriadoEm || 0).getTime();
-          const dateB = new Date(b.AtualizadoEm || b.CriadoEm || 0).getTime();
-          return dateB - dateA;
-        });
-        if (!cancelado) setPosts(lista);
-        if (!cancelado && response.data.total) {
-          setTotalPages(Math.ceil(response.data.total / limit));
-        }
-      } catch (err: any) {
-        if (!cancelado) setError("Erro ao buscar postagens.");
-      } finally {
-        if (!cancelado) setLoading(false);
-      }
-    };
-    if (user && user.nome) fetchPosts();
-    else {
-      setLoading(false);
-      setPosts([]);
-    }
-    return () => { cancelado = true; };
-  }, [user, search, page]);
+  const {
+    data: postsResponse,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["posts", user?.nome, page],
+    enabled: Boolean(user?.nome),
+    queryFn: () =>
+      getPosts({
+        page,
+        limit,
+        autor: user?.nome || undefined,
+      }),
+  });
 
-  const hasPosts = posts.length > 0;
-  const filteredPosts = React.useMemo(() => {
-    if (!search.trim()) return posts;
+  const orderedPosts = useMemo(() => {
+    const lista = postsResponse?.posts ? [...postsResponse.posts] : [];
+    return lista.sort((a: Post, b: Post) => {
+      const dateA = new Date(a.AtualizadoEm || a.CriadoEm || 0).getTime();
+      const dateB = new Date(b.AtualizadoEm || b.CriadoEm || 0).getTime();
+      return dateB - dateA;
+    });
+  }, [postsResponse]);
+
+  const hasPosts = orderedPosts.length > 0;
+  const filteredPosts = useMemo(() => {
+    if (!search.trim()) return orderedPosts;
     const termos = normalizarTexto(search)
       .split(/\s+/)
       .map(t => t.trim())
       .filter(Boolean);
 
-    return posts.filter((p: Post) => {
+    return orderedPosts.filter((p: Post) => {
       const titulo = p.titulo ? normalizarTexto(p.titulo) : '';
       const conteudo = p.conteudo ? normalizarTexto(p.conteudo) : '';
       const area = p.areaDoConhecimento ? normalizarTexto(p.areaDoConhecimento) : '';
+      const autor = p.autor ? normalizarTexto(p.autor) : '';
 
       // Match quando QUALQUER palavra digitada aparece em qualquer campo
-      return termos.some(t => titulo.includes(t) || conteudo.includes(t) || area.includes(t));
+      return termos.some(t => titulo.includes(t) || conteudo.includes(t) || area.includes(t) || autor.includes(t));
     });
-  }, [posts, search]);
+  }, [orderedPosts, search]);
+
+  const totalPages = postsResponse?.total ? Math.ceil(postsResponse.total / limit) : 1;
+  const loading = Boolean(user?.nome) && isLoading;
+  const error = isError ? "Erro ao buscar postagens." : "";
 
   return (
     <div className="page-center" style={{ maxWidth: 800, margin: "0 auto", padding: 24, boxSizing: 'border-box', justifyContent: 'flex-start' }}>
@@ -132,7 +110,7 @@ const GerenciarPostagens: React.FC = () => {
       )}
       {loading && <p>Carregando...</p>}
       {!loading && error && <p style={{ color: "red" }}>{error}</p>}
-      {!loading && posts.length === 0 && (
+      {!loading && orderedPosts.length === 0 && (
         <div style={{ textAlign: 'center', marginTop: 32 }}>
           <p style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 12 }}>
             Não há postagens
@@ -144,7 +122,7 @@ const GerenciarPostagens: React.FC = () => {
           </Link>
         </div>
       )}
-      {!loading && posts.length > 0 && filteredPosts.length === 0 && (
+      {!loading && orderedPosts.length > 0 && filteredPosts.length === 0 && (
         <div style={{ textAlign: 'center', marginTop: 16, width: '100%' }}>
           <p style={{ fontSize: 15, fontWeight: 700, color: '#111', margin: 0 }}>
             Nenhuma postagem encontrada para a busca.
@@ -159,6 +137,7 @@ const GerenciarPostagens: React.FC = () => {
               <thead>
                 <tr style={{ background: "#f3f3f3" }}>
                   <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Título</th>
+                  <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Autor</th>
                   <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Resumo</th>
                   <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Publicado em</th>
                   <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Editar</th>
@@ -172,6 +151,9 @@ const GerenciarPostagens: React.FC = () => {
                     {/* Apenas uma linha para o título */}
                     <td style={{ padding: 8, border: "1px solid #ddd", fontWeight: 700, color: '#7c4dbe', fontSize: 16, minWidth: 120, maxWidth: 180, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {post.titulo}
+                    </td>
+                    <td style={{ padding: 8, border: "1px solid #ddd", color: '#111', minWidth: 140, maxWidth: 200 }}>
+                      {post.autor || "Autor desconhecido"}
                     </td>
                     {/* Resumo do conteúdo (100 caracteres) */}
                     <td style={{ padding: 8, border: "1px solid #ddd", wordBreak: 'break-word', minWidth: 220, maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', color: '#111' }}>{(post.conteudo || "").substring(0, 100)}...</td>
@@ -219,8 +201,8 @@ const GerenciarPostagens: React.FC = () => {
               <button disabled={deleting} onClick={async () => {
                 setDeleting(true);
                 try {
-                  await api.delete(`/posts/${confirmDeleteId}`);
-                  setPosts(posts.filter(p => p.id !== confirmDeleteId));
+                  await deletePost(confirmDeleteId);
+                  await refetch();
                   setConfirmDeleteId(null);
                   setToast('Post excluído com sucesso!');
                   setTimeout(() => setToast(null), 2500);
@@ -242,6 +224,7 @@ const GerenciarPostagens: React.FC = () => {
         <div style={{ background: '#fff', padding: 32, borderRadius: 12, boxShadow: '0 2px 12px #0002', minWidth: 320, maxWidth: 420, textAlign: 'center', position: 'relative' }}>
           <button onClick={() => setModalPost(null)} style={{ position: 'absolute', top: 12, right: 12, background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 700, cursor: 'pointer' }}>Fechar</button>
           <h2 style={{ marginBottom: 12 }}>{modalPost.titulo}</h2>
+          <div style={{ marginBottom: 8, color: '#444', fontWeight: 700 }}>{modalPost.autor || 'Autor desconhecido'}</div>
           {modalPost.imagem && <img src={modalPost.imagem} alt="imagem do post" style={{ maxWidth: 180, maxHeight: 180, borderRadius: 8, marginBottom: 12 }} />}
           <div style={{ marginBottom: 12, color: '#111', fontWeight: 800 }}>{modalPost.areaDoConhecimento || ''}</div>
           <div style={{ marginBottom: 12 }}>{modalPost.conteudo}</div>

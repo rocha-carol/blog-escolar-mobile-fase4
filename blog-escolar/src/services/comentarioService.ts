@@ -5,7 +5,7 @@ export type Comentario = {
   post: string;
   autor: { nome: string; _id: string } | string;
   texto: string;
-  createdAt: string;
+  criadoEm: string;
 };
 
 export async function listarComentarios(postId: string): Promise<Comentario[]> {
@@ -13,8 +13,12 @@ export async function listarComentarios(postId: string): Promise<Comentario[]> {
   return response.data;
 }
 
-export async function criarComentario(postId: string, texto: string): Promise<Comentario> {
-  const response = await api.post(`/comentarios/${postId}` , { texto });
+export async function criarComentario(
+  postId: string,
+  texto: string,
+  autor: string,
+): Promise<Comentario> {
+  const response = await api.post(`/comentarios/${postId}`, { texto, autor });
   return response.data;
 }
 

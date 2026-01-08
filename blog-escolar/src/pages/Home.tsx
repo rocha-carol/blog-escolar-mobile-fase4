@@ -1,5 +1,5 @@
 import AudioRead from '../components/AudioRead';
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import { FaRegCommentDots } from "react-icons/fa";
 import { listarComentarios, criarComentario, excluirComentario } from "../services/comentarioService";
 import type { Comentario } from "../services/comentarioService";
@@ -7,6 +7,7 @@ import useAuth from "../hooks/useAuth";
 import { Link } from "react-router-dom";
 import { getPosts } from "../services/postService";
 import type { Post } from "../services/postService";
+import useQuery from "../hooks/useQuery";
 import "../styles/Home.css";
 import "../styles/center.css";
 
@@ -18,21 +19,17 @@ const AREAS_CONHECIMENTO = [
 
 export const Home: React.FC = () => {
   const { user } = useAuth();
-  const [posts, setPosts] = useState<Post[]>([]);
   const [search, setSearch] = useState("");
   const [areaSelecionada, setAreaSelecionada] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-
-  // Função para buscar posts paginados
-  const fetchPosts = useCallback(async (pageToFetch: number) => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await getPosts(pageToFetch, 11);
+  const {
+    data: postsResponse,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["posts", page, search, areaSelecionada],
+    queryFn: async () => {
+      const res = await getPosts({ page, limit: 11 });
       let lista = res.posts;
       if (search) {
         const termo = search.toLowerCase();
@@ -45,27 +42,14 @@ export const Home: React.FC = () => {
       if (areaSelecionada) {
         lista = lista.filter((p: Post) => p.areaDoConhecimento === areaSelecionada);
       }
-      setPosts(lista);
-      setHasMore(res.hasMore);
-    } catch (e) {
-      setError("Erro ao carregar posts.");
-    } finally {
-      setLoading(false);
-    }
-  }, [search, areaSelecionada]);
+      return { posts: lista, hasMore: res.hasMore };
+    },
+  });
 
-  // Carrega a primeira página ao montar
-  useEffect(() => {
-    fetchPosts(1);
-    setPage(1);
-  }, [fetchPosts]);
-
-  // Remove scroll infinito
-
-  // Busca posts ao mudar página ou busca
-  useEffect(() => {
-    fetchPosts(page);
-  }, [page, fetchPosts, search, areaSelecionada]);
+  const posts = postsResponse?.posts ?? [];
+  const hasMore = postsResponse?.hasMore ?? false;
+  const loading = isLoading;
+  const error = isError ? "Erro ao carregar posts." : "";
 
   const destaque = posts[0];
   const ultimas: Post[] = posts.slice(1); // todos os demais posts vão para as listas abaixo
@@ -85,26 +69,24 @@ export const Home: React.FC = () => {
 
   // Comentários
   const [comentariosAbertos, setComentariosAbertos] = useState<string | null>(null); // postId
-  const [comentarios, setComentarios] = useState<Comentario[]>([]);
-  const [comentariosLoading, setComentariosLoading] = useState(false);
+  const {
+    data: comentarios = [],
+    isLoading: comentariosLoading,
+    refetch: refetchComentarios,
+  } = useQuery<Comentario[]>({
+    queryKey: ["comentarios", comentariosAbertos],
+    enabled: Boolean(comentariosAbertos),
+    queryFn: () => listarComentarios(comentariosAbertos as string),
+  });
 
   // Função para abrir comentários de um post
-  const abrirComentarios = async (postId: string) => {
+  const abrirComentarios = (postId: string) => {
     setComentariosAbertos(postId);
-    setComentariosLoading(true);
-    try {
-      const lista = await listarComentarios(postId);
-      setComentarios(lista);
-    } catch (e) {
-      setComentarios([]);
-    }
-    setComentariosLoading(false);
   };
 
   // Função para fechar comentários
   const fecharComentarios = () => {
     setComentariosAbertos(null);
-    setComentarios([]);
   };
 
   return (
@@ -132,8 +114,8 @@ export const Home: React.FC = () => {
                     if (!texto) return;
                     input.disabled = true;
                     try {
-                      const novo = await criarComentario(comentariosAbertos!, texto);
-                      setComentarios(prev => [...prev, novo]);
+                      await criarComentario(comentariosAbertos!, texto, user?.nome ?? "");
+                      await refetchComentarios();
                       input.value = '';
                     } catch (err) {
                       alert('Erro ao enviar comentário.');
@@ -161,14 +143,14 @@ export const Home: React.FC = () => {
                       <li key={com._id} style={{ borderBottom: '1px solid #eee', padding: '8px 0', position: 'relative' }}>
                         <div style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{typeof com.autor === 'string' ? com.autor : com.autor?.nome || 'Usuário'}</div>
                         <div style={{ fontSize: 14, color: '#444', margin: '2px 0 4px 0' }}>{com.texto}</div>
-                        <div style={{ fontSize: 12, color: '#888' }}>{new Date(com.createdAt).toLocaleString('pt-BR')}</div>
+                        <div style={{ fontSize: 12, color: '#888' }}>{new Date(com.criadoEm).toLocaleString('pt-BR')}</div>
                         {user?.role === 'professor' && (
                           <button
                             onClick={async () => {
                               if (!window.confirm('Excluir este comentário?')) return;
                               try {
                                 await excluirComentario(com._id);
-                                setComentarios(prev => prev.filter(c => c._id !== com._id));
+                                await refetchComentarios();
                               } catch (err) {
                                 alert('Erro ao excluir comentário.');
                               }

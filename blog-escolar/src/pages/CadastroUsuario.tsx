@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import useQuery from "../hooks/useQuery";
 
 const CadastroUsuario: React.FC = () => {
   // Estados para os campos do formulário
@@ -7,31 +8,39 @@ const CadastroUsuario: React.FC = () => {
   const [senha, setSenha] = useState("");
   const [role, setRole] = useState("professor");
   const [mensagem, setMensagem] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  const { isLoading, refetch } = useQuery({
+    queryKey: ["cadastro-usuario", nome, email, senha, role],
+    enabled: false,
+    queryFn: async () => {
+      const response = await fetch("/usuario/registro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, email, senha, role }),
+      });
+      if (!response.ok) {
+        throw new Error("Erro ao cadastrar usuário.");
+      }
+      return true;
+    },
+  });
 
   // Função para enviar o cadastro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setMensagem("");
     try {
-      // Envia os dados para o backend
-      const response = await fetch("/usuario/registro", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, email, senha, role })
-      });
-      if (response.ok) {
+      const result = await refetch();
+      if (result) {
         setMensagem("Usuário cadastrado com sucesso!");
         alert("Usuário cadastrado com sucesso!");
-        setNome(""); setEmail(""); setSenha(""); setRole("professor");
-      } else {
-        setMensagem("Erro ao cadastrar usuário.");
+        setNome("");
+        setEmail("");
+        setSenha("");
+        setRole("professor");
       }
     } catch {
       setMensagem("Erro de conexão.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -46,8 +55,8 @@ const CadastroUsuario: React.FC = () => {
         <option value="estudante">Estudante</option>
         <option value="coordenador">Coordenador Pedagógico</option>
       </select>
-      <button type="submit" disabled={loading} style={{ padding: "10px 28px", borderRadius: 8, background: "#7c4dbe", color: "#fff", border: "none", cursor: "pointer", fontSize: "1rem" }}>
-        {loading ? "Cadastrando..." : "Cadastrar"}
+      <button type="submit" disabled={isLoading} style={{ padding: "10px 28px", borderRadius: 8, background: "#7c4dbe", color: "#fff", border: "none", cursor: "pointer", fontSize: "1rem" }}>
+        {isLoading ? "Cadastrando..." : "Cadastrar"}
       </button>
       {mensagem && <p style={{ textAlign: "center", color: mensagem.includes("sucesso") ? "green" : "red" }}>{mensagem}</p>}
     </form>

@@ -45,8 +45,12 @@ const AppRoutes: React.FC = () => {
       {/* <Route path="/admin" element={<Admin />} /> */}
       {/* Cadastro de usuário */}
       <Route path="/cadastro" element={<CadastroUsuario />} />
-      {/* Alias legado */}
-      <Route path="/admin" element={<CadastroUsuario />} />
+      {/* Página administrativa */}
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <GerenciarPostagens />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

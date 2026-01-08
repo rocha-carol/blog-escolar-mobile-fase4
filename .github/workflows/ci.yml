@@ -1,0 +1,54 @@
+name: CI - Testes e Build
+
+on:
+  push:
+    branches: [main, desenvolvimento]
+  pull_request:
+    branches: [main, desenvolvimento]
+
+jobs:
+  backend:
+    name: Backend - Testes
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+        working-directory: Backend
+
+      - name: Rodar testes
+        run: npm test
+        working-directory: Backend
+
+  frontend:
+    name: Frontend - Lint e Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: blog-escolar/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+        working-directory: blog-escolar
+
+      - name: Lint
+        run: npm run lint
+        working-directory: blog-escolar
+
+      - name: Build
+        run: npm run build
+        working-directory: blog-escolar

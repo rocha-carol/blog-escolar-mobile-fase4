@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import "../styles/center.css";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getPostById, updatePost } from "../services/postService";
+import useQuery from "../hooks/useQuery";
 
 const PostEdit: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -11,32 +12,40 @@ const PostEdit: React.FC = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [area, setArea] = useState("");
+  const [author, setAuthor] = useState("");
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
-  const [loadingPost, setLoadingPost] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const { data: post, isLoading, isError } = useQuery({
+    queryKey: ["post", id],
+    enabled: Boolean(id),
+    queryFn: () => getPostById(id as string),
+  });
+
   useEffect(() => {
-    async function fetchPost() {
-      if (!id) return;
-      try {
-        setLoadingPost(true);
-        setErrorMsg(null);
-        const post = await getPostById(id);
-        setTitle(post.titulo || "");
-        setContent(post.conteudo || "");
-        setArea(post.areaDoConhecimento || "");
-        setImageSrc(post.imagem || null);
-      } catch {
-        setErrorMsg("Não foi possível carregar a postagem para edição.");
-      } finally {
-        setLoadingPost(false);
-      }
+    if (!post) return;
+    setErrorMsg(null);
+    setTitle(post.titulo || "");
+    setContent(post.conteudo || "");
+    setArea(post.areaDoConhecimento || "");
+    if (typeof post.autor === "string") {
+      setAuthor(post.autor);
+    } else if (post.autor && typeof post.autor === "object" && "nome" in post.autor) {
+      setAuthor(post.autor.nome || "");
+    } else {
+      setAuthor("");
     }
-    fetchPost();
+    setImageSrc(post.imagem || null);
     setIsDirty(false);
-  }, [id]);
+  }, [post]);
+
+  useEffect(() => {
+    if (isError) {
+      setErrorMsg("Não foi possível carregar a postagem para edição.");
+    }
+  }, [isError]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -130,7 +139,7 @@ const PostEdit: React.FC = () => {
           </div>
         )}
 
-        {loadingPost ? (
+        {isLoading ? (
           <div style={{ padding: 18, borderRadius: 12, background: '#f7f7f7', color: '#444', fontWeight: 700 }}>
             Carregando postagem...
           </div>
@@ -163,6 +172,18 @@ const PostEdit: React.FC = () => {
                   required
                   rows={10}
                   style={{ width: '100%', padding: '12px 12px', borderRadius: 10, border: '1px solid #dcdcdc', fontSize: 16, minHeight: 220, resize: 'vertical', outline: 'none', lineHeight: 1.5 }}
+                />
+              </div>
+
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800, color: '#111', marginBottom: 6 }}>
+                  <span>Autor</span>
+                  <AudioRead text={author} />
+                </label>
+                <input
+                  value={author}
+                  readOnly
+                  style={{ width: '100%', padding: '12px 12px', borderRadius: 10, border: '1px solid #dcdcdc', fontSize: 16, background: '#f5f5f5', color: '#666' }}
                 />
               </div>
 

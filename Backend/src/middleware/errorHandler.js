@@ -1,4 +1,4 @@
- function errorHandler(err, req, res, next) {
+function errorHandler(err, req, res, next) {
   console.error("Erro capturado:", err);
 
   if (err.name === "CastError") {

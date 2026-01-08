@@ -1,11 +1,6 @@
 import React from 'react';
 import { FaVolumeUp } from 'react-icons/fa';
-
-interface AudioReadProps {
-  text: string;
-  label?: string;
-  style?: React.CSSProperties;
-}
+import type { AudioReadProps } from "../interfaces/audioRead";
 
 const AudioRead: React.FC<AudioReadProps> = ({ text, label = 'Ouvir', style }) => {
   const speak = () => {

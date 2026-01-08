@@ -17,8 +17,8 @@ async function conectaNaDatabase() {
             mongoUrl = mongoServer.getUri();
             console.log("Conectando ao MongoMemoryServer (teste)...");
         } else {
-            mongoUrl = process.env.DB_CONNECTION_STRING;
-            if (!mongoUrl) throw new Error("DB_CONNECTION_STRING não definida no .env");
+            mongoUrl = process.env.MONGO_URI;
+            if (!mongoUrl) throw new Error("MONGO_URI não definida no .env");
         }
 
         await mongoose.connect(mongoUrl, {

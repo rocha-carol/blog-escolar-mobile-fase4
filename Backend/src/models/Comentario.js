@@ -6,7 +6,8 @@ const ComentarioSchema = new mongoose.Schema({
     texto: { type: String, required: true },
     criadoEm: { type: Date, default: Date.now }
 }, {
-    versionKey: false
+    versionKey: false,
+    timestamps: true
 });
 
 const Comentario = mongoose.model("Comentario", ComentarioSchema);

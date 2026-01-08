@@ -1,9 +1,7 @@
 import axios from "axios";
 
-// Altere a URL base para o endereço da sua API
-const api = axios.create({
-  baseURL: "http://localhost:3000/", // Exemplo, ajuste conforme API
-});
+const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/";
+const api = axios.create({ baseURL });
 
 // Interceptor para enviar token em todas as requisições
 api.interceptors.request.use((config) => {

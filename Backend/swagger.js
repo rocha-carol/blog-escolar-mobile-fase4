@@ -18,9 +18,9 @@ const options = {
     ],
     components: {
       securitySchemes: {
-        BasicAuth: {
+        bearerAuth: {
           type: "http",
-          scheme: "basic",
+          scheme: "bearer",
         },
       },
     },

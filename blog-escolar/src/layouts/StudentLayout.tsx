@@ -1,6 +1,7 @@
 import React from 'react';
+import type { ChildrenProps } from "../interfaces/children";
 
-const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const StudentLayout: React.FC<ChildrenProps> = ({ children }) => {
   return (
     <div>
       <header style={{ background: '#1976d2', color: '#fff', padding: '1rem' }}>
