@@ -1,23 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import api from "../services/authService";
+import { deletePost, getPosts } from "../services/postService";
+import type { Post } from "../services/postService";
 import { Link } from "react-router-dom";
-
-// Estrutura de um post para listagem
-interface Post {
-  id: string;
-  titulo: string;
-  conteudo: string;
-  status: string;
-  CriadoEm?: string;
-  AtualizadoEm?: string;
-  CriadoEmHora?: string;
-  AtualizadoEmHora?: string;
-  imagem?: string;
-  areaDoConhecimento?: string;
-  autor?: string;
-}
 
 const normalizarTexto = (valor: string) =>
   valor
@@ -47,9 +33,12 @@ const GerenciarPostagens: React.FC = () => {
       try {
         setLoading(true);
         setError("");
-        const url = `/posts?page=${page}&limit=${limit}`;
-        const response = await api.get(url);
-        let lista = response.data.posts || [];
+        const response = await getPosts({
+          page,
+          limit,
+          autor: user?.nome || undefined,
+        });
+        let lista = response.posts || [];
         // Ordenação por data (sempre decrescente)
         lista = lista.sort((a: Post, b: Post) => {
           const dateA = new Date(a.AtualizadoEm || a.CriadoEm || 0).getTime();
@@ -57,8 +46,8 @@ const GerenciarPostagens: React.FC = () => {
           return dateB - dateA;
         });
         if (!cancelado) setPosts(lista);
-        if (!cancelado && response.data.total) {
-          setTotalPages(Math.ceil(response.data.total / limit));
+        if (!cancelado && response.total) {
+          setTotalPages(Math.ceil(response.total / limit));
         }
       } catch (err: any) {
         if (!cancelado) setError("Erro ao buscar postagens.");
@@ -222,7 +211,7 @@ const GerenciarPostagens: React.FC = () => {
               <button disabled={deleting} onClick={async () => {
                 setDeleting(true);
                 try {
-                  await api.delete(`/posts/${confirmDeleteId}`);
+                  await deletePost(confirmDeleteId);
                   setPosts(posts.filter(p => p.id !== confirmDeleteId));
                   setConfirmDeleteId(null);
                   setToast('Post excluído com sucesso!');

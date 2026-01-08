@@ -32,7 +32,7 @@ export const Home: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await getPosts(pageToFetch, 11);
+      const res = await getPosts({ page: pageToFetch, limit: 11 });
       let lista = res.posts;
       if (search) {
         const termo = search.toLowerCase();
