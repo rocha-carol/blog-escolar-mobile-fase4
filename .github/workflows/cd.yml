@@ -1,4 +1,4 @@
-name: CD - Build e Push Docker Image
+name: CD - Docker Backend
 
 on:
   push:
@@ -7,12 +7,17 @@ on:
       - desenvolvimento
 
 jobs:
-  build:
+  docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      - name: Clonar repositório
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login no Docker Hub
         uses: docker/login-action@v3
@@ -20,22 +25,19 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Definir tag da imagem
-        id: tag
-        run: |
-          if [ "${GITHUB_REF_NAME}" = "main" ]; then
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-          fi
+      - name: Gerar tags da imagem
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: carolinesant/blog
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value={{branch}},enable={{is_branch}}
 
-      - name: Set environment
-        run: |
-          export DB_CONNECTION_STRING=${{ secrets.DB_CONNECTION_STRING }}
-          export PORT=3000
-
-      - name: Build da imagem Docker
-        run: docker build -t carolinesant/blog:${{ steps.tag.outputs.tag }} Backend
-
-      - name: Push da imagem para o Docker Hub
-        run: docker push carolinesant/blog:${{ steps.tag.outputs.tag }}
+      - name: Build e push da imagem
+        uses: docker/build-push-action@v5
+        with:
+          context: Backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

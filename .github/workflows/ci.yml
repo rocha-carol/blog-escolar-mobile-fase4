@@ -1,13 +1,14 @@
-name: CI - Testes e Build do Projeto
+name: CI - Testes e Build
 
 on:
   push:
     branches: [main, desenvolvimento]
   pull_request:
-    branches: [main]
+    branches: [main, desenvolvimento]
 
 jobs:
-  build:
+  backend:
+    name: Backend - Testes
     runs-on: ubuntu-latest
 
     steps:
@@ -16,31 +17,38 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
 
-      - run: npm install
+      - name: Instalar dependências
+        run: npm ci
         working-directory: Backend
 
-      - run: npm test || echo "testes em execução"
+      - name: Rodar testes
+        run: npm test
         working-directory: Backend
 
-      - name: Login Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+  frontend:
+    name: Frontend - Lint e Build
+    runs-on: ubuntu-latest
 
-      - name: Definir tag da imagem
-        id: tag
-        run: |
-          if [ "${GITHUB_REF_NAME}" = "main" ]; then
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-          fi
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Build e push da imagem
-        uses: docker/build-push-action@v4
+      - uses: actions/setup-node@v4
         with:
-          context: Backend
-          push: true
-          tags: carolinesant/blog:${{ steps.tag.outputs.tag }}
+          node-version: 20
+          cache: npm
+          cache-dependency-path: blog-escolar/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+        working-directory: blog-escolar
+
+      - name: Lint
+        run: npm run lint
+        working-directory: blog-escolar
+
+      - name: Build
+        run: npm run build
+        working-directory: blog-escolar
