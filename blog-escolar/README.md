@@ -1,73 +1,117 @@
-# React + TypeScript + Vite
+# Blog Escolar - Front-End
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface gráfica do projeto de blogging educacional, construída em React + TypeScript.
+O foco é oferecer uma experiência simples e acessível para professores(as) e estudantes,
+com páginas de leitura, criação e gerenciamento de postagens integradas ao back-end REST.
 
-Currently, two official plugins are available:
+## Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Lista de posts (Home)**: exibe título, autor e resumo, com busca por palavra-chave.
+- **Leitura de post**: visualização completa do conteúdo e comentários.
+- **Criação de postagens**: formulário para docentes criarem novas publicações.
+- **Edição de postagens**: edição com dados pré-carregados.
+- **Área administrativa**: listagem com ações de editar e excluir.
+- **Autenticação**: login para professores(as) com rotas protegidas.
 
-## React Compiler
+## Tecnologias
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19 + TypeScript
+- Vite
+- React Router
+- Styled Components
+- Axios
 
-## Expanding the ESLint configuration
+## Estrutura de pastas
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/     # Componentes reutilizáveis (cards, inputs, etc.)
+├── contexts/       # AuthContext para sessão e token
+├── hooks/          # Hooks customizados (ex: useAuth)
+├── layouts/        # Layout principal e layout de login
+├── pages/          # Páginas da aplicação
+├── routes/         # Configuração de rotas e proteção
+├── services/       # Integração com API REST
+├── styles/         # Estilos globais e temas
+└── types/          # Tipagens compartilhadas
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Rotas principais
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Rota | Página | Acesso |
+| --- | --- | --- |
+| `/` | Lista de posts | Público |
+| `/post/:id` | Leitura do post | Público |
+| `/login` | Autenticação | Público |
+| `/criar` | Criar postagem | Professor(a) |
+| `/editar/:id` | Editar postagem | Professor(a) |
+| `/gerenciamentodepostagens` | Administração de posts | Professor(a) |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+As rotas protegidas utilizam `ProtectedRoute` e verificam a autenticação e o papel
+`professor` no usuário logado.
+
+## Integração com o Back-End
+
+A API é consumida via Axios em `src/services/`.
+Atualize o `baseURL` em `src/services/authService.ts` para apontar para o endereço
+correto do back-end.
+
+Principais endpoints esperados:
+
+- `POST /usuario/login` - autenticação
+- `GET /posts` - listagem paginada
+- `GET /posts/:id` - detalhes da postagem
+- `POST /posts` - criação
+- `PUT /posts/:id` - edição
+- `DELETE /posts/:id` - exclusão (usado na área administrativa)
+
+## Como executar
+
+### Pré-requisitos
+
+- Node.js 18+
+- Back-end rodando e acessível
+
+### Instalação
+
+```bash
+npm install
 ```
+
+### Desenvolvimento
+
+```bash
+npm run dev
+```
+
+### Build de produção
+
+```bash
+npm run build
+```
+
+### Preview local
+
+```bash
+npm run preview
+```
+
+## Uso
+
+1. Acesse `http://localhost:5173` para visualizar a aplicação.
+2. Faça login com um usuário professor(a).
+3. Crie, edite ou gerencie postagens pelas rotas protegidas.
+
+## Documentação técnica
+
+- **Autenticação**: `AuthContext` mantém token e usuário no `localStorage`.
+- **Proteção de rotas**: `ProtectedRoute` redireciona usuários não autenticados.
+- **Integração com API**: serviços em `src/services` encapsulam as chamadas REST.
+- **Componentização**: páginas em `src/pages`, com layout padrão em `src/layouts`.
+
+## Scripts disponíveis
+
+- `npm run dev` - inicia o servidor de desenvolvimento
+- `npm run build` - gera a build de produção
+- `npm run preview` - pré-visualização da build
+- `npm run lint` - análise estática do código
