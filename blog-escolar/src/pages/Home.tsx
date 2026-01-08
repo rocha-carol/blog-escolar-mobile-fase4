@@ -143,7 +143,7 @@ export const Home: React.FC = () => {
                       <li key={com._id} style={{ borderBottom: '1px solid #eee', padding: '8px 0', position: 'relative' }}>
                         <div style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{typeof com.autor === 'string' ? com.autor : com.autor?.nome || 'Usuário'}</div>
                         <div style={{ fontSize: 14, color: '#444', margin: '2px 0 4px 0' }}>{com.texto}</div>
-                        <div style={{ fontSize: 12, color: '#888' }}>{new Date(com.createdAt).toLocaleString('pt-BR')}</div>
+                        <div style={{ fontSize: 12, color: '#888' }}>{new Date(com.criadoEm).toLocaleString('pt-BR')}</div>
                         {user?.role === 'professor' && (
                           <button
                             onClick={async () => {

@@ -5,7 +5,7 @@ export type Comentario = {
   post: string;
   autor: { nome: string; _id: string } | string;
   texto: string;
-  createdAt: string;
+  criadoEm: string;
 };
 
 export async function listarComentarios(postId: string): Promise<Comentario[]> {
