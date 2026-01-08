@@ -39,6 +39,9 @@ const PostRead: React.FC = () => {
         <div className="postread-titulo">{post.titulo} <AudioRead text={post.titulo} /></div>
         <div className="postread-infos">
           <span className="postread-info">{post.areaDoConhecimento || "Artigos"} <AudioRead text={post.areaDoConhecimento || 'Artigos'} /></span>
+          {post.autor && (
+            <span className="postread-info">Publicado por {typeof post.autor === "string" ? post.autor : post.autor.nome} <AudioRead text={`Publicado por ${typeof post.autor === "string" ? post.autor : post.autor.nome}`} /></span>
+          )}
           {post.AtualizadoEm
             ? <span className="postread-info">Atualizado em {post.AtualizadoEm} <AudioRead text={`Atualizado em ${post.AtualizadoEm}`} /></span>
             : <span className="postread-info">Publicado em {post.CriadoEm || '--'} <AudioRead text={`Publicado em ${post.CriadoEm || '--'}`} /></span>

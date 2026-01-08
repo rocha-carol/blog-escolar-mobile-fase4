@@ -75,9 +75,10 @@ const GerenciarPostagens: React.FC = () => {
       const titulo = p.titulo ? normalizarTexto(p.titulo) : '';
       const conteudo = p.conteudo ? normalizarTexto(p.conteudo) : '';
       const area = p.areaDoConhecimento ? normalizarTexto(p.areaDoConhecimento) : '';
+      const autor = p.autor ? normalizarTexto(p.autor) : '';
 
       // Match quando QUALQUER palavra digitada aparece em qualquer campo
-      return termos.some(t => titulo.includes(t) || conteudo.includes(t) || area.includes(t));
+      return termos.some(t => titulo.includes(t) || conteudo.includes(t) || area.includes(t) || autor.includes(t));
     });
   }, [posts, search]);
 
@@ -146,6 +147,7 @@ const GerenciarPostagens: React.FC = () => {
               <thead>
                 <tr style={{ background: "#f3f3f3" }}>
                   <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Título</th>
+                  <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Autor</th>
                   <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Resumo</th>
                   <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Publicado em</th>
                   <th style={{ padding: 8, border: "1px solid #ddd", color: '#000' }}>Editar</th>
@@ -159,6 +161,9 @@ const GerenciarPostagens: React.FC = () => {
                     {/* Apenas uma linha para o título */}
                     <td style={{ padding: 8, border: "1px solid #ddd", fontWeight: 700, color: '#7c4dbe', fontSize: 16, minWidth: 120, maxWidth: 180, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {post.titulo}
+                    </td>
+                    <td style={{ padding: 8, border: "1px solid #ddd", color: '#111', minWidth: 140, maxWidth: 200 }}>
+                      {post.autor || "Autor desconhecido"}
                     </td>
                     {/* Resumo do conteúdo (100 caracteres) */}
                     <td style={{ padding: 8, border: "1px solid #ddd", wordBreak: 'break-word', minWidth: 220, maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', color: '#111' }}>{(post.conteudo || "").substring(0, 100)}...</td>
@@ -229,6 +234,7 @@ const GerenciarPostagens: React.FC = () => {
         <div style={{ background: '#fff', padding: 32, borderRadius: 12, boxShadow: '0 2px 12px #0002', minWidth: 320, maxWidth: 420, textAlign: 'center', position: 'relative' }}>
           <button onClick={() => setModalPost(null)} style={{ position: 'absolute', top: 12, right: 12, background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 700, cursor: 'pointer' }}>Fechar</button>
           <h2 style={{ marginBottom: 12 }}>{modalPost.titulo}</h2>
+          <div style={{ marginBottom: 8, color: '#444', fontWeight: 700 }}>{modalPost.autor || 'Autor desconhecido'}</div>
           {modalPost.imagem && <img src={modalPost.imagem} alt="imagem do post" style={{ maxWidth: 180, maxHeight: 180, borderRadius: 8, marginBottom: 12 }} />}
           <div style={{ marginBottom: 12, color: '#111', fontWeight: 800 }}>{modalPost.areaDoConhecimento || ''}</div>
           <div style={{ marginBottom: 12 }}>{modalPost.conteudo}</div>

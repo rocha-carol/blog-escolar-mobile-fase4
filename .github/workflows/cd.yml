@@ -35,7 +35,7 @@ jobs:
           export PORT=3000
 
       - name: Build da imagem Docker
-        run: docker build -t carolinesant/blog:${{ steps.tag.outputs.tag }} .
+        run: docker build -t carolinesant/blog:${{ steps.tag.outputs.tag }} Backend
 
       - name: Push da imagem para o Docker Hub
         run: docker push carolinesant/blog:${{ steps.tag.outputs.tag }}

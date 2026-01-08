@@ -218,6 +218,14 @@ const PostCreate: React.FC = () => {
 
       <input placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} required style={{ margin: '12px 0', width: '100%', maxWidth: 350, textAlign: 'center' }} /> <AudioRead text={title} />
       <textarea placeholder="Conteúdo" value={content} onChange={e => setContent(e.target.value)} required style={{ margin: '12px 0', width: '100%', maxWidth: 350, minHeight: 100, textAlign: 'center' }} /> <AudioRead text={content} />
+      <input
+        placeholder="Autor"
+        value={author}
+        onChange={e => setAuthor(e.target.value)}
+        required
+        readOnly
+        style={{ margin: '12px 0', width: '100%', maxWidth: 350, textAlign: 'center', background: '#f3f3f3', color: '#555', border: '1px solid #ddd' }}
+      /> <AudioRead text={author} />
 
 
       <div style={{ margin: '16px 0', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -229,8 +237,8 @@ const PostCreate: React.FC = () => {
         </select>
       </div>
 
-      <div style={{ margin: '12px 0', width: '100%', maxWidth: 350, textAlign: 'center', color: '#555', fontWeight: 500 }}>
-        Autoria: {author}
+      <div style={{ margin: '6px 0 0', width: '100%', maxWidth: 350, textAlign: 'center', color: '#555', fontWeight: 500 }}>
+        Autor preenchido a partir do seu perfil.
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>

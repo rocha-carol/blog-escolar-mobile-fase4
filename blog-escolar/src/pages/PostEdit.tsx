@@ -11,6 +11,7 @@ const PostEdit: React.FC = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [area, setArea] = useState("");
+  const [author, setAuthor] = useState("");
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [loadingPost, setLoadingPost] = useState(true);
@@ -27,6 +28,13 @@ const PostEdit: React.FC = () => {
         setTitle(post.titulo || "");
         setContent(post.conteudo || "");
         setArea(post.areaDoConhecimento || "");
+        if (typeof post.autor === "string") {
+          setAuthor(post.autor);
+        } else if (post.autor && typeof post.autor === "object" && "nome" in post.autor) {
+          setAuthor(post.autor.nome || "");
+        } else {
+          setAuthor("");
+        }
         setImageSrc(post.imagem || null);
       } catch {
         setErrorMsg("Não foi possível carregar a postagem para edição.");
@@ -163,6 +171,18 @@ const PostEdit: React.FC = () => {
                   required
                   rows={10}
                   style={{ width: '100%', padding: '12px 12px', borderRadius: 10, border: '1px solid #dcdcdc', fontSize: 16, minHeight: 220, resize: 'vertical', outline: 'none', lineHeight: 1.5 }}
+                />
+              </div>
+
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800, color: '#111', marginBottom: 6 }}>
+                  <span>Autor</span>
+                  <AudioRead text={author} />
+                </label>
+                <input
+                  value={author}
+                  readOnly
+                  style={{ width: '100%', padding: '12px 12px', borderRadius: 10, border: '1px solid #dcdcdc', fontSize: 16, background: '#f5f5f5', color: '#666' }}
                 />
               </div>
 
