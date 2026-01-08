@@ -1,5 +1,6 @@
 import React, { createContext, useState } from "react";
 import { loginService } from "../services/authService";
+import type { ChildrenProps } from "../interfaces/children";
 
 // 1. Define o formato dos dados do contexto
 type UserType = {
@@ -21,7 +22,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // 3. Provider que vai envolver a aplicação
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<ChildrenProps> = ({ children }) => {
   const [user, setUser] = useState<UserType | null>(null);
   const [token, setToken] = useState<string | null>(null);
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import AccessibilityBar from '../components/AccessibilityBar';
+import type { ChildrenProps } from "../interfaces/children";
 
 const PageShell = styled.div`
   min-height: 100vh;
@@ -49,7 +50,7 @@ const Footer = styled.footer`
   font-size: 0.9rem;
 `;
 
-const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const MainLayout: React.FC<ChildrenProps> = ({ children }) => {
   return (
     <PageShell>
       <Header>
