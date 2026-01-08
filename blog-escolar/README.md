@@ -1,117 +1,108 @@
-# Blog Escolar - Front-End
+# Blog Escolar - Front-end
 
-Interface gráfica do projeto de blogging educacional, construída em React + TypeScript.
-O foco é oferecer uma experiência simples e acessível para professores(as) e estudantes,
-com páginas de leitura, criação e gerenciamento de postagens integradas ao back-end REST.
+Documentação técnica detalhada do front-end do **Blog Escolar**, construída com React + TypeScript + Vite.
 
-## Funcionalidades
+## Sumário
+- [Visão geral](#visão-geral)
+- [Setup inicial](#setup-inicial)
+  - [Pré-requisitos](#pré-requisitos)
+  - [Instalação](#instalação)
+  - [Scripts disponíveis](#scripts-disponíveis)
+- [Arquitetura da aplicação](#arquitetura-da-aplicação)
+  - [Stack principal](#stack-principal)
+  - [Estrutura de pastas](#estrutura-de-pastas)
+  - [Fluxo de dados e responsabilidades](#fluxo-de-dados-e-responsabilidades)
+- [Guia de uso](#guia-de-uso)
+  - [Rodando em modo desenvolvimento](#rodando-em-modo-desenvolvimento)
+  - [Gerando build de produção](#gerando-build-de-produção)
+  - [Preview do build](#preview-do-build)
 
-- **Lista de posts (Home)**: exibe título, autor e resumo, com busca por palavra-chave.
-- **Leitura de post**: visualização completa do conteúdo e comentários.
-- **Criação de postagens**: formulário para docentes criarem novas publicações.
-- **Edição de postagens**: edição com dados pré-carregados.
-- **Área administrativa**: listagem com ações de editar e excluir.
-- **Autenticação**: login para professores(as) com rotas protegidas.
+## Visão geral
+O front-end do Blog Escolar é responsável por apresentar a interface de leitura e publicação de conteúdos escolares. Ele consome serviços expostos pelo back-end (API) e organiza a navegação e o estado da aplicação no cliente.
 
-## Tecnologias
-
-- React 19 + TypeScript
-- Vite
-- React Router
-- Styled Components
-- Axios
-
-## Estrutura de pastas
-
-```
-src/
-├── components/     # Componentes reutilizáveis (cards, inputs, etc.)
-├── contexts/       # AuthContext para sessão e token
-├── hooks/          # Hooks customizados (ex: useAuth)
-├── layouts/        # Layout principal e layout de login
-├── pages/          # Páginas da aplicação
-├── routes/         # Configuração de rotas e proteção
-├── services/       # Integração com API REST
-├── styles/         # Estilos globais e temas
-└── types/          # Tipagens compartilhadas
-```
-
-## Rotas principais
-
-| Rota | Página | Acesso |
-| --- | --- | --- |
-| `/` | Lista de posts | Público |
-| `/post/:id` | Leitura do post | Público |
-| `/login` | Autenticação | Público |
-| `/criar` | Criar postagem | Professor(a) |
-| `/editar/:id` | Editar postagem | Professor(a) |
-| `/gerenciamentodepostagens` | Administração de posts | Professor(a) |
-
-As rotas protegidas utilizam `ProtectedRoute` e verificam a autenticação e o papel
-`professor` no usuário logado.
-
-## Integração com o Back-End
-
-A API é consumida via Axios em `src/services/`.
-Atualize o `baseURL` em `src/services/authService.ts` para apontar para o endereço
-correto do back-end.
-
-Principais endpoints esperados:
-
-- `POST /usuario/login` - autenticação
-- `GET /posts` - listagem paginada
-- `GET /posts/:id` - detalhes da postagem
-- `POST /posts` - criação
-- `PUT /posts/:id` - edição
-- `DELETE /posts/:id` - exclusão (usado na área administrativa)
-
-## Como executar
+## Setup inicial
 
 ### Pré-requisitos
-
-- Node.js 18+
-- Back-end rodando e acessível
+- Node.js (versão LTS recomendada)
+- npm (ou gerenciador compatível, como pnpm/yarn)
 
 ### Instalação
+1. Acesse a pasta do front-end:
+   ```bash
+   cd blog-escolar
+   ```
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
 
-```bash
-npm install
+### Scripts disponíveis
+- **Iniciar servidor de desenvolvimento**:
+  ```bash
+  npm run dev
+  ```
+- **Gerar build de produção**:
+  ```bash
+  npm run build
+  ```
+- **Pré-visualizar build localmente**:
+  ```bash
+  npm run preview
+  ```
+- **Rodar lint**:
+  ```bash
+  npm run lint
+  ```
+
+## Arquitetura da aplicação
+
+### Stack principal
+- **React**: biblioteca principal de UI.
+- **TypeScript**: tipagem estática e maior segurança no desenvolvimento.
+- **Vite**: bundler rápido para desenvolvimento e produção.
+
+### Estrutura de pastas
+Estrutura base do projeto:
+```
+blog-escolar/
+├─ public/                # Arquivos estáticos públicos
+├─ src/                   # Código-fonte do front-end
+│  ├─ assets/             # Imagens, ícones e mídias
+│  ├─ components/         # Componentes reutilizáveis
+│  ├─ pages/              # Páginas e telas principais
+│  ├─ services/           # Integrações com API (fetch/axios)
+│  ├─ styles/             # Estilos globais e temas
+│  ├─ App.tsx             # Componente raiz da aplicação
+│  └─ main.tsx            # Ponto de entrada
+├─ index.html             # HTML base do Vite
+├─ package.json           # Dependências e scripts
+└─ vite.config.ts         # Configurações do Vite
 ```
 
-### Desenvolvimento
+### Fluxo de dados e responsabilidades
+- **`main.tsx`** inicializa o React e injeta o app na DOM.
+- **`App.tsx`** centraliza o layout principal e a navegação.
+- **`pages/`** contém telas principais (por exemplo, listagens de posts e detalhes).
+- **`components/`** contém partes reutilizáveis da UI (cards, botões, cabeçalho, etc.).
+- **`services/`** concentra chamadas à API e abstrai a comunicação HTTP.
+- **`styles/`** organiza estilos globais e temas visuais.
 
+## Guia de uso
+
+### Rodando em modo desenvolvimento
 ```bash
 npm run dev
 ```
+O Vite iniciará o servidor local, normalmente em `http://localhost:5173`.
 
-### Build de produção
-
+### Gerando build de produção
 ```bash
 npm run build
 ```
+O output será gerado na pasta `dist/`.
 
-### Preview local
-
+### Preview do build
 ```bash
 npm run preview
 ```
-
-## Uso
-
-1. Acesse `http://localhost:5173` para visualizar a aplicação.
-2. Faça login com um usuário professor(a).
-3. Crie, edite ou gerencie postagens pelas rotas protegidas.
-
-## Documentação técnica
-
-- **Autenticação**: `AuthContext` mantém token e usuário no `localStorage`.
-- **Proteção de rotas**: `ProtectedRoute` redireciona usuários não autenticados.
-- **Integração com API**: serviços em `src/services` encapsulam as chamadas REST.
-- **Componentização**: páginas em `src/pages`, com layout padrão em `src/layouts`.
-
-## Scripts disponíveis
-
-- `npm run dev` - inicia o servidor de desenvolvimento
-- `npm run build` - gera a build de produção
-- `npm run preview` - pré-visualização da build
-- `npm run lint` - análise estática do código
+Permite testar o build localmente antes de publicar em produção.
