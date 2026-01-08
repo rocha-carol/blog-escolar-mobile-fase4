@@ -167,7 +167,7 @@ postsRoutes.get("/:id", PostsController.lerPost);
  *     description: Requer autenticação. Apenas usuários cadastrados como professores podem criar posts. Informe email e senha válidos.
  *     tags: [Acesso restrito - Professores]
  *     security:
- *       - BasicAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -209,7 +209,7 @@ postsRoutes.post("/", validarProfessor, uploadImagem.single("imagem"), PostsCont
  *     description: Requer autenticação. Apenas usuários cadastrados como professores podem editar posts. Informe email e senha válidos.
  *     tags: [Acesso restrito - Professores]
  *     security:
- *       - BasicAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -261,7 +261,7 @@ postsRoutes.put("/:id", validarProfessor, uploadImagem.single("imagem"), PostsCo
  *     description: Exclui o post pelo ID informado. Mostra o post correspondente ao ID antes da exclusão e retorna apenas a mensagem de sucesso.
  *     tags: [Acesso restrito - Professores]
  *     security:
- *       - BasicAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

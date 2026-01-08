@@ -27,7 +27,7 @@ Próximos Passos / Escalabilidade
 
 Visão Geral
 
-A Blog API é uma aplicação RESTful desenvolvida em Node.js com Express e MongoDB, voltada para gerenciamento de postagens e usuários com autenticação simples e criptografia de senha.
+A Blog API é uma aplicação RESTful desenvolvida em Node.js com Express e MongoDB, voltada para gerenciamento de postagens e usuários com autenticação via token bearer e criptografia de senha.
 O projeto foi projetado com foco em boas práticas, modularização, testes automatizados e pipelines CI/CD.
 
  Setup Inicial
