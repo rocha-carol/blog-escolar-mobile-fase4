@@ -114,7 +114,7 @@ export const Home: React.FC = () => {
                     if (!texto) return;
                     input.disabled = true;
                     try {
-                      await criarComentario(comentariosAbertos!, texto);
+                      await criarComentario(comentariosAbertos!, texto, user?.nome ?? "");
                       await refetchComentarios();
                       input.value = '';
                     } catch (err) {

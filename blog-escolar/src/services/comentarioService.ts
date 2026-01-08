@@ -13,8 +13,12 @@ export async function listarComentarios(postId: string): Promise<Comentario[]> {
   return response.data;
 }
 
-export async function criarComentario(postId: string, texto: string): Promise<Comentario> {
-  const response = await api.post(`/comentarios/${postId}` , { texto });
+export async function criarComentario(
+  postId: string,
+  texto: string,
+  autor: string,
+): Promise<Comentario> {
+  const response = await api.post(`/comentarios/${postId}`, { texto, autor });
   return response.data;
 }
 
