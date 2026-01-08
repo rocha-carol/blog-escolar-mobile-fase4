@@ -60,7 +60,7 @@ A aplicação é configurada para rodar localmente e consumir o backend durante 
    cd Backend
    npm install
    ```
-2. Configure o `.env` na raiz do backend:
+2. Configure o `.env` na raiz do backend (use a variável `MONGO_URI` para a conexão):
    ```env
    PORT=3000
    MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/blog
