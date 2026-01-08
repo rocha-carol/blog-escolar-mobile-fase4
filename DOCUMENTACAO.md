@@ -6,7 +6,7 @@ Este sistema é composto por duas aplicações principais:
 - **Backend (API Blog)**: serviço RESTful em Node.js/Express com MongoDB para cadastro de usuários e gerenciamento de postagens.
 - **Frontend (Blog Escolar)**: aplicação web em React (Vite + TypeScript) que consome a API para exibir e gerenciar conteúdos.
 
-O objetivo do projeto é disponibilizar uma plataforma de publicação simples, organizada e segura, com autenticação básica e fluxo de dados bem definido.
+O objetivo do projeto é disponibilizar uma plataforma de publicação simples, organizada e segura, com autenticação via token bearer e fluxo de dados bem definido.
 
 ## Arquitetura do sistema
 
