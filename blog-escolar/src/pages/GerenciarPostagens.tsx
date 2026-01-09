@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { deletePost, getPosts } from "../services/postService";
@@ -23,6 +23,10 @@ const GerenciarPostagens: React.FC = () => {
   const [toast, setToast] = useState<string | null>(null);
   const [modalPost, setModalPost] = useState<Post | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const {
     data: postsResponse,

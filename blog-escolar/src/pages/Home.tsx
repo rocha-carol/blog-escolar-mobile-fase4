@@ -1,5 +1,5 @@
 import AudioRead from '../components/AudioRead';
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaRegCommentDots } from "react-icons/fa";
 import { listarComentarios, criarComentario, excluirComentario } from "../services/comentarioService";
 import type { Comentario } from "../services/comentarioService";
@@ -22,6 +22,10 @@ export const Home: React.FC = () => {
   const [search, setSearch] = useState("");
   const [areaSelecionada, setAreaSelecionada] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, areaSelecionada]);
   const {
     data: postsResponse,
     isLoading,
