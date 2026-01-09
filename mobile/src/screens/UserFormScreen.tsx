@@ -17,6 +17,13 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (user && user.role !== "professor") {
+      Alert.alert("Acesso restrito", "Apenas professores podem gerenciar usuários.");
+      navigation.navigate("Main");
+    }
+  }, [navigation, user]);
+
+  useEffect(() => {
     if (mode === "edit" && userId) {
       fetchUser(userId).then((user) => {
         setNome(user.nome);

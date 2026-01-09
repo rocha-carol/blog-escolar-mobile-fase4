@@ -13,6 +13,13 @@ const AdminPostsScreen: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (user && user.role !== "professor") {
+      Alert.alert("Acesso restrito", "Apenas professores podem administrar postagens.");
+      navigation.navigate("Posts");
+    }
+  }, [navigation, user]);
+
   const loadPosts = async () => {
     setLoading(true);
     try {

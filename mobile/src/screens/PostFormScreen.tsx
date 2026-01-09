@@ -16,6 +16,11 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (user && user.role !== "professor") {
+      Alert.alert("Acesso restrito", "Apenas professores podem criar ou editar postagens.");
+      navigation.navigate("Main");
+      return;
+    }
     if (mode === "edit" && postId) {
       fetchPost(postId).then((post) => {
         setTitulo(post.titulo);
@@ -24,7 +29,7 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
         setAutoria(post.autoria || "");
       });
     }
-  }, [mode, postId]);
+  }, [mode, navigation, postId, user]);
 
   useEffect(() => {
     if (mode === "create" && user?.nome && !autoria) {
@@ -42,7 +47,7 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   }
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user || user.role !== "professor") return;
     setLoading(true);
     try {
       const payload = {

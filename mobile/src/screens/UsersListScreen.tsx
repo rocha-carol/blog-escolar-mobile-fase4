@@ -32,6 +32,13 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
     loadUsers(1);
   }, [role]);
 
+  useEffect(() => {
+    if (user && user.role !== "professor") {
+      Alert.alert("Acesso restrito", "Apenas professores podem gerenciar usuários.");
+      navigation.navigate("Posts");
+    }
+  }, [navigation, user]);
+
   const handleDelete = (userId: string) => {
     Alert.alert("Excluir", "Deseja remover este usuário?", [
       { text: "Cancelar", style: "cancel" },
