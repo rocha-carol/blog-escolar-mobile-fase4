@@ -12,6 +12,7 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
   const [area, setArea] = useState("");
+  const [autoria, setAutoria] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -20,9 +21,25 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
         setTitulo(post.titulo);
         setConteudo(post.conteudo);
         setArea(post.areaDoConhecimento || "");
+        setAutoria(post.autoria || "");
       });
     }
   }, [mode, postId]);
+
+  useEffect(() => {
+    if (mode === "create" && user?.nome && !autoria) {
+      setAutoria(user.nome);
+    }
+  }, [mode, user?.nome, autoria]);
+
+  if (!user || user.role !== "professor") {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+        <Text style={styles.title}>Acesso restrito</Text>
+        <Text>Somente professores podem criar ou editar postagens.</Text>
+      </ScrollView>
+    );
+  }
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -31,7 +48,7 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
       const payload = {
         titulo,
         conteudo,
-        autoria: user.nome,
+        autoria: autoria || user.nome,
         areaDoConhecimento: area || undefined,
       };
       if (mode === "edit" && postId) {
@@ -53,6 +70,7 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
       <Text style={styles.title}>{mode === "edit" ? "Editar Postagem" : "Nova Postagem"}</Text>
       <AppInput label="Título" value={titulo} onChangeText={setTitulo} />
+      <AppInput label="Autor" value={autoria} onChangeText={setAutoria} />
       <AppInput label="Área do conhecimento" value={area} onChangeText={setArea} />
       <AppInput label="Conteúdo" value={conteudo} onChangeText={setConteudo} multiline />
       <AppButton title={loading ? "Salvando..." : "Salvar"} onPress={handleSubmit} disabled={loading} />

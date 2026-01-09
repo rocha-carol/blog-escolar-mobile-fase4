@@ -5,24 +5,31 @@ import colors from "../theme/colors";
 import { deleteUser, fetchUsers } from "../services/users";
 import type { UserRole, User } from "../types";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../contexts/AuthContext";
 
 const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
   const navigation = useNavigation<any>();
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const limit = 10;
 
-  const loadUsers = async () => {
+  const loadUsers = async (nextPage = 1) => {
     setLoading(true);
     try {
-      const response = await fetchUsers({ role });
-      setUsers(response.items);
+      const response = await fetchUsers({ role, page: nextPage, limit });
+      setHasMore(response.hasMore);
+      setPage(response.page);
+      setUsers((prev) => (nextPage === 1 ? response.items : [...prev, ...response.items]));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadUsers();
+    loadUsers(1);
   }, [role]);
 
   const handleDelete = (userId: string) => {
@@ -33,11 +40,20 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
         style: "destructive",
         onPress: async () => {
           await deleteUser(userId);
-          loadUsers();
+          loadUsers(1);
         },
       },
     ]);
   };
+
+  if (!user || user.role !== "professor") {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Acesso restrito</Text>
+        <Text>Somente professores podem gerenciar usuários.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -49,7 +65,7 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
       <FlatList
         data={users}
         keyExtractor={(item) => item.id}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadUsers} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={() => loadUsers(1)} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{item.nome}</Text>
@@ -63,6 +79,13 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
             </View>
           </View>
         )}
+        ListFooterComponent={
+          hasMore ? (
+            <View style={styles.footer}>
+              <AppButton title="Carregar mais" onPress={() => loadUsers(page + 1)} disabled={loading} />
+            </View>
+          ) : null
+        }
         contentContainerStyle={{ paddingVertical: 16 }}
       />
     </View>
@@ -103,6 +126,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
+  },
+  footer: {
+    marginTop: 8,
   },
 });
 
