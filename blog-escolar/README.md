@@ -12,6 +12,10 @@ Documentação técnica detalhada do front-end do **Blog Escolar**, construída 
   - [Stack principal](#stack-principal)
   - [Estrutura de pastas](#estrutura-de-pastas)
   - [Fluxo de dados e responsabilidades](#fluxo-de-dados-e-responsabilidades)
+- [Mobile (experiência responsiva)](#mobile-experiência-responsiva)
+  - [Setup inicial para dispositivos](#setup-inicial-para-dispositivos)
+  - [Arquitetura e decisões para mobile](#arquitetura-e-decisões-para-mobile)
+  - [Guia de uso no mobile](#guia-de-uso-no-mobile)
 - [Guia de uso](#guia-de-uso)
   - [Rodando em modo desenvolvimento](#rodando-em-modo-desenvolvimento)
   - [Gerando build de produção](#gerando-build-de-produção)
@@ -86,6 +90,30 @@ blog-escolar/
 - **`components/`** contém partes reutilizáveis da UI (cards, botões, cabeçalho, etc.).
 - **`services/`** concentra chamadas à API e abstrai a comunicação HTTP.
 - **`styles/`** organiza estilos globais e temas visuais.
+
+## Mobile (experiência responsiva)
+Esta aplicação é web, mas foi pensada para funcionar bem em telas pequenas por meio de responsividade em CSS, especialmente nas páginas **Home** e **PostRead**. Os estilos usam breakpoints para adaptar layout, espaçamentos e comportamento dos componentes conforme a largura da tela. 
+
+### Setup inicial para dispositivos
+Para testar em um celular físico na mesma rede:
+1. Inicie o servidor do Vite expondo a interface de rede:
+   ```bash
+   npm run dev -- --host
+   ```
+2. No terminal, observe o endereço LAN exibido pelo Vite (ex.: `http://192.168.0.10:5173`).
+3. Acesse esse endereço no navegador do dispositivo móvel.
+
+### Arquitetura e decisões para mobile
+- **Breakpoints principais**: a responsividade é aplicada com `@media` queries em 700px, 900px e 1100px para ajustar colunas, grids e espaçamentos de listas e cards. 
+- **Telas-chave**: 
+  - **Home**: define a maior parte dos ajustes de layout para conteúdos, botões e seções de listagem. 
+  - **PostRead**: adapta o fluxo de leitura, margens e composição de conteúdo em telas menores. 
+- **CSS orientado a layout**: ajustes são concentrados em `src/styles/Home.css` e `src/styles/PostRead.css`, evitando lógica condicional no React para manter a interface consistente em desktop e mobile. 
+
+### Guia de uso no mobile
+- **Navegação**: use o menu e os cards da Home para abrir posts; o layout se reorganiza automaticamente para telas estreitas. 
+- **Leitura e interação**: em PostRead, o conteúdo e os comentários são empilhados para melhorar a legibilidade em celulares. 
+- **Testes rápidos**: reduza a largura da janela do navegador (ou use o modo responsivo do DevTools) para validar os mesmos breakpoints usados no mobile. 
 
 ## Guia de uso
 
