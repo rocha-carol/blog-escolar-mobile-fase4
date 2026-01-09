@@ -9,6 +9,7 @@ const PostEdit: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const { id } = useParams();
   const navigate = useNavigate();
+  const redirectTimerRef = React.useRef<number | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [area, setArea] = useState("");
@@ -59,6 +60,15 @@ const PostEdit: React.FC = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
 
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        window.clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
@@ -78,10 +88,14 @@ const PostEdit: React.FC = () => {
       await updatePost(id, formData);
       setSuccessMsg("Alterações salvas com sucesso!");
       setIsDirty(false);
-      setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (redirectTimerRef.current) {
+        window.clearTimeout(redirectTimerRef.current);
+      }
+      redirectTimerRef.current = window.setTimeout(() => {
         setSuccessMsg(null);
         navigate("/gerenciamentodepostagens");
-      }, 1800);
+      }, 3000);
     } catch {
       setErrorMsg("Erro ao salvar alterações. Tente novamente.");
     } finally {
@@ -128,8 +142,15 @@ const PostEdit: React.FC = () => {
         </p>
 
         {successMsg && (
-          <div style={{ background: '#4dbec7', color: '#fff', padding: '12px 16px', borderRadius: 10, fontWeight: 800, fontSize: 15, boxShadow: '0 2px 12px #0002', textAlign: 'center' }}>
-            {successMsg}
+          <div style={{ background: '#4dbec7', color: '#fff', padding: '12px 16px', borderRadius: 10, fontWeight: 800, fontSize: 15, boxShadow: '0 2px 12px #0002', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span>{successMsg}</span>
+            <button
+              type="button"
+              onClick={() => navigate("/gerenciamentodepostagens")}
+              style={{ padding: '8px 12px', borderRadius: 10, background: '#ffffff', color: '#4b1f73', border: 'none', cursor: 'pointer', fontWeight: 900, boxShadow: '0 2px 10px rgba(0,0,0,0.12)' }}
+            >
+              Ir ao gerenciamento
+            </button>
           </div>
         )}
 

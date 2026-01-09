@@ -1,0 +1,107 @@
+/* Estilos específicos da página de Login (harmonizados com o restante do app) */
+
+.login-shell {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  width: 100%;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px 26px 22px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(124, 77, 190, 0.12);
+  box-shadow: var(--app-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.login-title {
+  margin: 0 0 8px;
+  font-size: 1.8rem;
+  color: #3d1f7a;
+  letter-spacing: 0.3px;
+  text-align: center;
+}
+
+.login-subtitle {
+  margin: 0 0 18px;
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 0.98rem;
+}
+
+.login-alert {
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 600;
+}
+
+.login-alert--error {
+  background: rgba(224, 77, 77, 0.12);
+  border: 1px solid rgba(224, 77, 77, 0.28);
+  color: #b11f1f;
+}
+
+.login-alert--success {
+  background: rgba(77, 190, 199, 0.14);
+  border: 1px solid rgba(77, 190, 199, 0.32);
+  color: #165e63;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-label {
+  font-weight: 700;
+  color: #2f2f2f;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-input {
+  width: 100%;
+}
+
+.login-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.login-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.login-footer {
+  margin-top: 14px;
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 0.95rem;
+}
+
+.login-footer a {
+  color: var(--app-accent);
+  text-decoration: underline;
+}
+
+.login-footer a:hover {
+  color: var(--app-accent-strong);
+}

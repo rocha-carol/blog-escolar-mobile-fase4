@@ -19,6 +19,7 @@ const AREAS_CONHECIMENTO = [
 
 export const Home: React.FC = () => {
   const { user } = useAuth();
+  const nomeComentario = useMemo(() => (user?.nome?.trim() ? user.nome.trim() : "Anônimo"), [user?.nome]);
   const [search, setSearch] = useState("");
   const [areaSelecionada, setAreaSelecionada] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -30,6 +31,7 @@ export const Home: React.FC = () => {
     data: postsResponse,
     isLoading,
     isError,
+    refetch: refetchPosts,
   } = useQuery({
     queryKey: ["posts", page, search, areaSelecionada],
     queryFn: async () => {
@@ -71,10 +73,21 @@ export const Home: React.FC = () => {
     return 'Autor desconhecido';
   };
 
+  const getInfoDataPublicacao = (p: Post) => {
+    const criado = p.CriadoEm;
+    const atualizado = p.AtualizadoEm;
+    const foiAtualizado = Boolean(atualizado) && atualizado !== criado;
+    if (foiAtualizado) {
+      return { label: 'Atualizado em', data: atualizado as string };
+    }
+    return { label: 'Publicado em', data: criado || '--' };
+  };
+
   // Comentários
   const [comentariosAbertos, setComentariosAbertos] = useState<string | null>(null); // postId
+  const novoComentarioRef = useRef<HTMLTextAreaElement | null>(null);
   const {
-    data: comentarios = [],
+    data: comentariosRaw,
     isLoading: comentariosLoading,
     refetch: refetchComentarios,
   } = useQuery<Comentario[]>({
@@ -82,6 +95,8 @@ export const Home: React.FC = () => {
     enabled: Boolean(comentariosAbertos),
     queryFn: () => listarComentarios(comentariosAbertos as string),
   });
+
+  const comentarios: Comentario[] = comentariosRaw ?? [];
 
   // Função para abrir comentários de um post
   const abrirComentarios = (postId: string) => {
@@ -167,11 +182,19 @@ export const Home: React.FC = () => {
     );
   };
 
+  useEffect(() => {
+    if (!comentariosAbertos) return;
+    const t = window.setTimeout(() => {
+      novoComentarioRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [comentariosAbertos]);
+
   return (
     <>
       <div className="home-container page-center">
       {/* Nome do usuário e botão de login/logout agora estão na barra de acessibilidade */}
-      <h1 className="titulo-principal" style={{ color: '#222', textAlign: 'center', width: '100%' }}>Blog escolar</h1>
+      <h1 className="titulo-principal" style={{ color: '#7c4dbe', textAlign: 'center', width: '100%' }}>Entre linhas e ideias</h1>
       {user?.role === "professor" && (
         <div style={{ width: "100%", display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 16 }}>
           <Link to="/gerenciamentodepostagens">
@@ -246,21 +269,84 @@ export const Home: React.FC = () => {
             </div>
             <div className="home-bloco-posts">
               {destaque && (
-                <div style={{ position: 'relative', gridColumn: 'span 2', minHeight: 380 }}>
-                  <Link to={`/post/${destaque.id}`} className="home-card-destaque" style={{ minHeight: 380, fontSize: '1.22rem', padding: '40px 40px 28px 40px', boxShadow: '0 8px 36px #7c4dbe22', borderRadius: 22, display: 'block' }}>
+                <div style={{ position: 'relative', gridColumn: 'span 2', minHeight: 430 }}>
+                  <Link
+                    to={`/post/${destaque.id}`}
+                    className="home-card-destaque"
+                    style={{
+                      minHeight: 430,
+                      height: 'auto',
+                      fontSize: '1.22rem',
+                      padding: '28px 34px 22px 34px',
+                      boxShadow: '0 8px 36px #7c4dbe22',
+                      borderRadius: 22,
+                      display: 'block',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    {/* 1. Imagem acima */}
                     {destaque.imagem && (
-                      <img src={destaque.imagem} alt={destaque.titulo} style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 16, marginBottom: 18 }} />
+                      <img
+                        src={destaque.imagem}
+                        alt={destaque.titulo}
+                        style={{
+                          width: '100%',
+                          maxHeight: 320,
+                          objectFit: 'cover',
+                          borderRadius: 16,
+                          marginBottom: 14,
+                        }}
+                      />
                     )}
-                    <span className="categoria">{destaque.areaDoConhecimento || 'Artigos'}</span>
-                    <span className="autor" style={{ fontSize: '0.95em', color: '#555', fontWeight: 500, marginBottom: 4 }}>
-                      Publicado por: {getNomeAutor(destaque)}
-                    </span>
-                    <span className="titulo">{destaque.titulo} <AudioRead text={destaque.titulo} /></span>
-                    <p style={{ fontSize: '1.08rem', marginTop: 10 }}>{destaque.conteudo.substring(0, 120)}... <AudioRead text={destaque.conteudo.substring(0, 120)} /></p>
-                    {destaque.AtualizadoEm
-                      ? <small>Atualizado em {destaque.AtualizadoEm}</small>
-                      : <small>Publicado em {destaque.CriadoEm || '--'}</small>
-                    }
+
+                    {/* 2. Área (esq) e 6. Publicado/Atualizado (dir) abaixo da imagem */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'nowrap', marginBottom: 10 }}>
+                      <span className="categoria" style={{ marginBottom: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%', fontSize: '0.78rem', padding: '2px 10px' }}>
+                        {destaque.areaDoConhecimento || 'Artigos'}
+                      </span>
+                      {(() => {
+                        const info = getInfoDataPublicacao(destaque);
+                        return (
+                          <small style={{ color: '#666', fontWeight: 600, fontStyle: 'italic', fontSize: '0.78rem', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            {info.label} {info.data}
+                          </small>
+                        );
+                      })()}
+                    </div>
+
+                    {/* 4. Título centralizado */}
+                    <div style={{ textAlign: 'center', margin: '6px 0 10px 0' }}>
+                      <span className="titulo" style={{ display: 'inline-block' }}>
+                        {destaque.titulo} <AudioRead text={destaque.titulo} />
+                      </span>
+                    </div>
+
+                    {/* 5. Conteúdo justificado */}
+                    <p style={{ fontSize: '1.08rem', marginTop: 0, marginBottom: 50, textAlign: 'justify' }}>
+                      {destaque.conteudo.substring(0, 120)}... <AudioRead text={destaque.conteudo.substring(0, 120)} />
+                    </p>
+
+                    {/* 7. Ícone de comentário à esquerda e 3. Publicado por à direita abaixo do conteúdo */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 0 }}>
+                      <button
+                        type="button"
+                        className="comentario-icone-btn"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}
+                        title="Ver comentários"
+                        aria-label="Ver comentários"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          abrirComentarios(destaque.id);
+                        }}
+                      >
+                        <FaRegCommentDots size={20} color="#7c4dbe" />
+                        <span style={{ fontWeight: 700, color: '#7c4dbe', fontSize: 15 }}>{destaque.comentariosCount ?? 0}</span>
+                      </button>
+                      <span className="autor" style={{ fontSize: '0.88em', color: '#555', fontWeight: 400, fontStyle: 'italic', marginBottom: 0, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        Publicado por: {getNomeAutor(destaque)}
+                      </span>
+                    </div>
                   </Link>
                   <button
                     className="comentario-icone-btn"
@@ -285,21 +371,72 @@ export const Home: React.FC = () => {
         {/* Primeira lista: 2 colunas, 1 linha, cards retangulares */}
         <div className="home-ultimas-lista home-ultimas-lista-2col">
           {ultimas.slice(0, 2).map((post: Post) => (
-            <div key={post.id} style={{ position: 'relative' }}>
-              <Link to={`/post/${post.id}`} className="home-card-ultima-ret">
+            <div key={post.id}>
+              <Link to={`/post/${post.id}`} className="home-card-ultima-ret" style={{ height: 'auto' }}>
+                {/* 1. Imagem acima */}
                 {post.imagem && (
-                  <img src={post.imagem} alt={post.titulo} style={{ width: '100%', maxHeight: 120, objectFit: 'cover', borderRadius: 10, marginBottom: 10 }} />
+                  <img src={post.imagem} alt={post.titulo} style={{ width: '100%', maxHeight: 190, objectFit: 'cover', borderRadius: 10, marginBottom: 10 }} />
                 )}
-                <span className="categoria">{post.areaDoConhecimento || 'Artigos'}</span>
-                <span className="autor" style={{ fontSize: '0.95em', color: '#555', fontWeight: 500, marginBottom: 4 }}>
-                  Publicado por: {getNomeAutor(post)}
-                </span>
-                    <span className="titulo">{post.titulo} <AudioRead text={post.titulo} /></span>
-                    <p>{post.conteudo.substring(0, 60)}... <AudioRead text={post.conteudo.substring(0, 60)} /></p>
-                {post.AtualizadoEm
-                  ? <small>Atualizado em {post.AtualizadoEm}</small>
-                  : <small>Publicado em {post.CriadoEm || '--'}</small>
-                }
+
+                {/* 2. Área (esq) e 6. Publicado/Atualizado (dir) abaixo da imagem */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'nowrap', marginBottom: 10 }}>
+                  <span className="categoria" style={{ marginBottom: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%', fontSize: '0.78rem', padding: '2px 10px' }}>
+                    {post.areaDoConhecimento || 'Artigos'}
+                  </span>
+                  {(() => {
+                    const info = getInfoDataPublicacao(post);
+                    return (
+                      <small style={{ color: '#666', fontWeight: 600, fontStyle: 'italic', fontSize: '0.78rem', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {info.label} {info.data}
+                      </small>
+                    );
+                  })()}
+                </div>
+
+                {/* 4. Título centralizado */}
+                <div style={{ textAlign: 'center', margin: '4px 0 8px 0' }}>
+                  <span className="titulo" style={{ display: 'inline-block' }}>
+                    {post.titulo} <AudioRead text={post.titulo} />
+                  </span>
+                </div>
+
+                {/* 5. Conteúdo justificado */}
+                <p
+                  style={{
+                    marginTop: 0,
+                    marginBottom: 18,
+                    textAlign: 'justify',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {post.conteudo.substring(0, 130)}... <AudioRead text={post.conteudo.substring(0, 130)} />
+                </p>
+
+                {/* 7. Ícone de comentário à esquerda e 3. Publicado por à direita abaixo do conteúdo */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <button
+                    type="button"
+                    className="comentario-icone-btn"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}
+                    title="Ver comentários"
+                    aria-label="Ver comentários"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      abrirComentarios(post.id);
+                    }}
+                  >
+                    <FaRegCommentDots size={20} color="#7c4dbe" />
+                    <span style={{ fontWeight: 700, color: '#7c4dbe', fontSize: 15 }}>{post.comentariosCount ?? 0}</span>
+                  </button>
+                  <span className="autor" style={{ fontSize: '0.88em', color: '#555', fontWeight: 400, fontStyle: 'italic', marginBottom: 0, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    Publicado por: {getNomeAutor(post)}
+                  </span>
+                </div>
               </Link>
               <button
                 className="comentario-icone-btn"
@@ -317,26 +454,72 @@ export const Home: React.FC = () => {
         {/* Segunda lista: 3 colunas, 1 linha, cards quadrados */}
         <div className="home-ultimas-lista home-ultimas-lista-3col">
           {ultimas.slice(2, 5).map((post: Post) => (
-            <div key={post.id} style={{ position: 'relative' }}>
-              <Link to={`/post/${post.id}`} className="home-card-ultima-quad">
+            <div key={post.id}>
+              <Link to={`/post/${post.id}`} className="home-card-ultima-quad" style={{ height: 'auto', aspectRatio: 'auto' }}>
+                {/* 1. Imagem acima */}
                 {post.imagem && (
-                  <img src={post.imagem} alt={post.titulo} style={{ width: '100%', maxHeight: 100, objectFit: 'cover', borderRadius: 10, marginBottom: 8 }} />
+                  <img src={post.imagem} alt={post.titulo} style={{ width: '100%', maxHeight: 170, objectFit: 'cover', borderRadius: 10, marginBottom: 8 }} />
                 )}
-                <div className="home-card-img-wrapper">
-                  {post.imagem ? (
-                    <img src={post.imagem} alt={post.titulo} />
-                  ) : null}
+
+                {/* 2. Área (esq) e 6. Publicado/Atualizado (dir) abaixo da imagem */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'nowrap', marginBottom: 8, width: '100%' }}>
+                  <span className="categoria" style={{ marginBottom: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '62%', fontSize: '0.78rem', padding: '2px 10px' }}>
+                    {post.areaDoConhecimento || 'Artigos'}
+                  </span>
+                  {(() => {
+                    const info = getInfoDataPublicacao(post);
+                    return (
+                      <small style={{ color: '#666', fontWeight: 600, fontStyle: 'italic', fontSize: '0.78rem', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {info.label} {info.data}
+                      </small>
+                    );
+                  })()}
                 </div>
-                <span className="categoria">{post.areaDoConhecimento || 'Artigos'}</span>
-                <span className="autor" style={{ fontSize: '0.95em', color: '#555', fontWeight: 500, marginBottom: 4 }}>
-                  Publicado por: {getNomeAutor(post)}
-                </span>
-                    <span className="titulo">{post.titulo} <AudioRead text={post.titulo} /></span>
-                    <p>{post.conteudo.substring(0, 40)}... <AudioRead text={post.conteudo.substring(0, 40)} /></p>
-                {post.AtualizadoEm
-                  ? <small>Atualizado em {post.AtualizadoEm}</small>
-                  : <small>Publicado em {post.CriadoEm || '--'}</small>
-                }
+
+                {/* 4. Título centralizado */}
+                <div style={{ textAlign: 'center', margin: '2px 0 6px 0', width: '100%' }}>
+                  <span className="titulo" style={{ display: 'inline-block' }}>
+                    {post.titulo} <AudioRead text={post.titulo} />
+                  </span>
+                </div>
+
+                {/* 5. Conteúdo justificado */}
+                <p
+                  style={{
+                    marginTop: 0,
+                    marginBottom: 14,
+                    textAlign: 'justify',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {post.conteudo.substring(0, 100)}... <AudioRead text={post.conteudo.substring(0, 100)} />
+                </p>
+
+                {/* 7. Ícone de comentário à esquerda e 3. Publicado por à direita abaixo do conteúdo */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                  <button
+                    type="button"
+                    className="comentario-icone-btn"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}
+                    title="Ver comentários"
+                    aria-label="Ver comentários"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      abrirComentarios(post.id);
+                    }}
+                  >
+                    <FaRegCommentDots size={20} color="#7c4dbe" />
+                    <span style={{ fontWeight: 700, color: '#7c4dbe', fontSize: 15 }}>{post.comentariosCount ?? 0}</span>
+                  </button>
+                  <span className="autor" style={{ fontSize: '0.88em', color: '#555', fontWeight: 400, fontStyle: 'italic', marginBottom: 0, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    Publicado por: {getNomeAutor(post)}
+                  </span>
+                </div>
               </Link>
               <button
                 className="comentario-icone-btn"
@@ -355,22 +538,96 @@ export const Home: React.FC = () => {
         <div className="home-ultimas-lista home-ultimas-lista-leia">
           <h3 className="home-leia-titulo">Você também pode ler...</h3>
           {ultimas.slice(5).map((post: Post) => (
-            <div key={post.id} style={{ position: 'relative' }}>
-              <Link to={`/post/${post.id}`} className="home-card-leia">
-                {post.imagem && (
-                  <img src={post.imagem} alt={post.titulo} style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 10, marginRight: 12 }} />
-                )}
-                <div className="home-card-leia-info">
-                  <span className="categoria">{post.areaDoConhecimento || 'Artigos'}</span>
-                  <span className="autor" style={{ fontSize: '0.95em', color: '#555', fontWeight: 500, marginBottom: 4 }}>
-                    Publicado por: {getNomeAutor(post)}
-                  </span>
-                  <span className="titulo">{post.titulo} <AudioRead text={post.titulo} /></span>
-                  <p>{post.conteudo.substring(0, 40)}... <AudioRead text={post.conteudo.substring(0, 40)} /></p>
-                  {post.AtualizadoEm
-                    ? <small>Atualizado em {post.AtualizadoEm}</small>
-                    : <small>Publicado em {post.CriadoEm || '--'}</small>
-                  }
+            <div key={post.id}>
+              <Link
+                to={`/post/${post.id}`}
+                className="home-card-leia"
+                style={{
+                  display: 'flex',
+                  alignItems: 'stretch',
+                  gap: 16,
+                }}
+              >
+                <div
+                  aria-hidden={!post.imagem}
+                  style={{
+                    width: 170,
+                    height: 170,
+                    borderRadius: 12,
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    background: '#eee',
+                    display: 'flex',
+                  }}
+                >
+                  {post.imagem && (
+                    <img
+                      src={post.imagem}
+                      alt={post.titulo}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', padding: '8px 14px 8px 0' }}>
+                  {/* Área (esq) e Publicado/Atualizado (dir) */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'nowrap', marginBottom: 6 }}>
+                    <span className="categoria" style={{ marginBottom: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%', fontSize: '0.78rem', padding: '2px 10px' }}>
+                      {post.areaDoConhecimento || 'Artigos'}
+                    </span>
+                    {(() => {
+                      const info = getInfoDataPublicacao(post);
+                      return (
+                        <small style={{ color: '#666', fontWeight: 600, fontStyle: 'italic', fontSize: '0.78rem', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          {info.label} {info.data}
+                        </small>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Título centralizado (verticalmente no meio do card) */}
+                  <div style={{ flex: 1, minHeight: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', margin: 0, paddingTop: 6, paddingBottom: 2 }}>
+                    <span className="titulo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minWidth: 0 }}>
+                      <span
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {post.titulo}
+                      </span>
+                      <AudioRead text={post.titulo} />
+                    </span>
+                  </div>
+
+                  {/* Comentário (esq) e Publicado por (dir) */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 'auto', paddingTop: 6 }}>
+                    <button
+                      type="button"
+                      className="comentario-icone-btn"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}
+                      title="Ver comentários"
+                      aria-label="Ver comentários"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        abrirComentarios(post.id);
+                      }}
+                    >
+                      <FaRegCommentDots size={20} color="#7c4dbe" />
+                      <span style={{ fontWeight: 700, color: '#7c4dbe', fontSize: 15 }}>{post.comentariosCount ?? 0}</span>
+                    </button>
+                    <span className="autor" style={{ fontSize: '0.88em', color: '#555', fontWeight: 400, fontStyle: 'italic', marginBottom: 0, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      Publicado por: {getNomeAutor(post)}
+                    </span>
+                  </div>
                 </div>
               </Link>
               <button

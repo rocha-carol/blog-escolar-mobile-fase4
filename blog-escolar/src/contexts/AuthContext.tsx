@@ -16,6 +16,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  isAuthLoading: boolean;
 };
 
 // 2. Cria o contexto com valor inicial "undefined"
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<ChildrenProps> = ({ children }) => {
   const [user, setUser] = useState<UserType | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // Tenta carregar token/user do localStorage ao iniciar
   React.useEffect(() => {
@@ -39,6 +41,9 @@ export const AuthProvider: React.FC<ChildrenProps> = ({ children }) => {
         localStorage.removeItem("user");
       }
     }
+
+    // Importante: sinaliza que a hidratação do auth terminou (evita redirects piscando)
+    setIsAuthLoading(false);
   }, []);
 
   // Função de login real
@@ -59,7 +64,7 @@ export const AuthProvider: React.FC<ChildrenProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!user, isAuthLoading }}>
       {children}
     </AuthContext.Provider>
   );

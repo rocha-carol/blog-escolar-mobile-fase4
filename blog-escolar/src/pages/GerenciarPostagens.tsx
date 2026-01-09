@@ -12,6 +12,15 @@ const normalizarTexto = (valor: string) =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
+const getNomeAutor = (autor: Post["autor"]) => {
+  if (!autor) return "";
+  if (typeof autor === "string") return autor;
+  if (typeof autor === "object" && "nome" in autor && typeof autor.nome === "string") {
+    return autor.nome;
+  }
+  return "";
+};
+
 const GerenciarPostagens: React.FC = () => {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
@@ -65,7 +74,7 @@ const GerenciarPostagens: React.FC = () => {
       const titulo = p.titulo ? normalizarTexto(p.titulo) : '';
       const conteudo = p.conteudo ? normalizarTexto(p.conteudo) : '';
       const area = p.areaDoConhecimento ? normalizarTexto(p.areaDoConhecimento) : '';
-      const autor = p.autor ? normalizarTexto(p.autor) : '';
+      const autor = p.autor ? normalizarTexto(getNomeAutor(p.autor)) : '';
 
       // Match quando QUALQUER palavra digitada aparece em qualquer campo
       return termos.some(t => titulo.includes(t) || conteudo.includes(t) || area.includes(t) || autor.includes(t));
@@ -157,7 +166,7 @@ const GerenciarPostagens: React.FC = () => {
                       {post.titulo}
                     </td>
                     <td style={{ padding: 8, border: "1px solid #ddd", color: '#111', minWidth: 140, maxWidth: 200 }}>
-                      {post.autor || "Autor desconhecido"}
+                      {getNomeAutor(post.autor) || "Autor desconhecido"}
                     </td>
                     {/* Resumo do conteúdo (100 caracteres) */}
                     <td style={{ padding: 8, border: "1px solid #ddd", wordBreak: 'break-word', minWidth: 220, maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', color: '#111' }}>{(post.conteudo || "").substring(0, 100)}...</td>
@@ -228,7 +237,7 @@ const GerenciarPostagens: React.FC = () => {
         <div style={{ background: '#fff', padding: 32, borderRadius: 12, boxShadow: '0 2px 12px #0002', minWidth: 320, maxWidth: 420, textAlign: 'center', position: 'relative' }}>
           <button onClick={() => setModalPost(null)} style={{ position: 'absolute', top: 12, right: 12, background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 700, cursor: 'pointer' }}>Fechar</button>
           <h2 style={{ marginBottom: 12 }}>{modalPost.titulo}</h2>
-          <div style={{ marginBottom: 8, color: '#444', fontWeight: 700 }}>{modalPost.autor || 'Autor desconhecido'}</div>
+          <div style={{ marginBottom: 8, color: '#444', fontWeight: 700 }}>{getNomeAutor(modalPost.autor) || 'Autor desconhecido'}</div>
           {modalPost.imagem && <img src={modalPost.imagem} alt="imagem do post" style={{ maxWidth: 180, maxHeight: 180, borderRadius: 8, marginBottom: 12 }} />}
           <div style={{ marginBottom: 12, color: '#111', fontWeight: 800 }}>{modalPost.areaDoConhecimento || ''}</div>
           <div style={{ marginBottom: 12 }}>{modalPost.conteudo}</div>

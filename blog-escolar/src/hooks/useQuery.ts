@@ -24,8 +24,13 @@ export default function useQuery<T>({
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const isActiveRef = useRef(true);
+  const queryFnRef = useRef(queryFn);
 
   const serializedKey = useMemo(() => JSON.stringify(queryKey ?? []), [queryKey]);
+
+  useEffect(() => {
+    queryFnRef.current = queryFn;
+  }, [queryFn]);
 
   const runQuery = useCallback(async () => {
     if (!isActiveRef.current) {
@@ -36,7 +41,7 @@ export default function useQuery<T>({
     setError(null);
     let result: T | null = null;
     try {
-      result = await queryFn();
+      result = await queryFnRef.current();
       if (isActiveRef.current) {
         setData(result);
       }
@@ -51,7 +56,7 @@ export default function useQuery<T>({
       }
     }
     return result;
-  }, [queryFn]);
+  }, []);
 
   useEffect(() => {
     isActiveRef.current = true;

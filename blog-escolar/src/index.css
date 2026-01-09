@@ -7,6 +7,8 @@ body.night-mode,
   --app-surface: #202020;
   --app-text: #e0e0e0;
   --app-muted: #b9b9b9;
+  --app-gradient: linear-gradient(135deg, #181818 0%, #181818 100%);
+  --app-border: rgba(255, 255, 255, 0.14);
 }
 
 .night-mode a,
@@ -31,25 +33,76 @@ body.night-mode input {
 body.high-contrast,
 .high-contrast body,
 .high-contrast {
-  background: #000 !important;
-  color: #fff !important;
-  --app-background: #000;
-  --app-surface: #000;
-  --app-text: #fff;
-  --app-muted: #fff;
+  /* Mais suave: ainda com alto contraste, mas sem “preto chapado” */
+  background: #0f1116 !important;
+  color: #f3f4f7 !important;
+  --app-background: #0f1116;
+  --app-surface: #151826;
+  --app-text: #f3f4f7;
+  --app-muted: rgba(243, 244, 247, 0.78);
+  --app-gradient: linear-gradient(135deg, #0f1116 0%, #13162a 55%, #0f1116 100%);
+  --app-border: rgba(255, 255, 255, 0.22);
+}
+
+/* Força o layout a respeitar os modos (MainLayout usa header/footer próprios) */
+body.night-mode header,
+.night-mode header {
+  background: #111 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+body.night-mode footer,
+.night-mode footer {
+  background: rgba(17, 17, 17, 0.92) !important;
+  color: #e0e0e0 !important;
+  border-top-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+body.high-contrast header,
+.high-contrast header {
+  background: #0f1116 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast footer,
+.high-contrast footer {
+  background: rgba(15, 17, 22, 0.92) !important;
+  color: #f3f4f7 !important;
+  border-top-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* Inverter cores (modo acessibilidade) */
+body.invert-colors,
+.invert-colors body,
+.invert-colors {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Destacar links (modo acessibilidade) */
+body.highlight-links a,
+.highlight-links a {
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 3px;
+  background: rgba(255, 230, 0, 0.35);
+  border-radius: 6px;
+  padding: 0 4px;
 }
 
 .high-contrast a,
 body.high-contrast a {
-  color: #ff0 !important;
+  color: #ffe873 !important;
   text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 3px;
 }
 
 .high-contrast button,
 body.high-contrast button {
-  background: #222 !important;
-  color: #fff !important;
-  border: 2px solid #fff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f3f4f7 !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
 }
 
 /* Badge/label de Área do Conhecimento (sempre legível) */
@@ -64,20 +117,23 @@ body.night-mode .categoria {
 }
 
 body.high-contrast .categoria {
-  background: #ff0 !important;
-  color: #000 !important;
-  border: 2px solid #000 !important;
+  background: rgba(255, 232, 115, 0.92) !important;
+  color: #111 !important;
+  border: 1px solid rgba(0, 0, 0, 0.35) !important;
 }
 
 .high-contrast input,
 body.high-contrast input {
-  background: #111 !important;
-  color: #fff !important;
-  border: 2px solid #fff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #f3f4f7 !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
 }
 
 :root {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --app-font-base: 'Inter', system-ui, -apple-system, sans-serif;
+  --app-font-fun: 'Kalam', 'Inter', system-ui, -apple-system, sans-serif;
+
+  font-family: var(--app-font-base);
   line-height: 1.5;
   font-weight: 400;
   color: #1b1b1b;
@@ -99,6 +155,15 @@ body.high-contrast input {
   --app-border: rgba(124, 77, 190, 0.12);
   --app-radius-lg: 24px;
   --app-radius-md: 16px;
+}
+
+/* Fonte mais divertida/desenhada para títulos e marca */
+h1,
+h2,
+h3,
+.app-fun-font {
+  font-family: var(--app-font-fun);
+  letter-spacing: 0.2px;
 }
 
 *,

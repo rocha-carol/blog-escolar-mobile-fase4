@@ -10,10 +10,19 @@ comentariosRoutes.post("/:postId", async (req, res) => {
     try {
         const { postId } = req.params;
         const { autor, texto } = req.body;
-        if (!texto || !autor) return res.status(400).json({ message: "Autor e texto obrigatórios" });
+
+        const textoNormalizado = typeof texto === "string" ? texto.trim() : "";
+        const autorNormalizado = typeof autor === "string" ? autor.trim() : "";
+
+        if (!textoNormalizado) {
+            return res.status(400).json({ message: "Texto do comentário é obrigatório" });
+        }
+
+        // Permite comentar sem login (ou sem informar nome)
+        const autorFinal = autorNormalizado || "Anônimo";
         const post = await Posts.findById(postId);
         if (!post) return res.status(404).json({ message: "Post não encontrado" });
-        const comentario = new Comentario({ post: postId, autor, texto });
+        const comentario = new Comentario({ post: postId, autor: autorFinal, texto: textoNormalizado });
         await comentario.save();
         res.status(201).json(comentario);
     } catch (err) {

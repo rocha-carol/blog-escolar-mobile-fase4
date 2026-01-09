@@ -26,6 +26,13 @@ function parseNumeroPositivo(valor, fallback, max = null) {
   return numero;
 }
 
+function foiAtualizado(createdAt, updatedAt) {
+  if (!createdAt || !updatedAt) return false;
+  const created = new Date(createdAt).getTime();
+  const updated = new Date(updatedAt).getTime();
+  return updated > created;
+}
+
 class PostsController {
 
   // Listar todos os posts
@@ -52,6 +59,7 @@ class PostsController {
 
       // Busca contagem de comentários para cada post
       const postsFormatados = await Promise.all(posts.map(async post => {
+        const atualizado = foiAtualizado(post.createdAt, post.updatedAt);
         const comentariosCount = await Comentario.countDocuments({ post: post._id });
         return {
           id: post._id,
@@ -68,8 +76,8 @@ class PostsController {
             const m = d.getMinutes().toString().padStart(2, '0');
             return `${h}h${m}`;
           })() : undefined,
-          AtualizadoEm: post.updatedAt ? new Date(post.updatedAt).toLocaleDateString('pt-BR') : undefined,
-          AtualizadoEmHora: post.updatedAt ? (() => {
+          AtualizadoEm: atualizado ? new Date(post.updatedAt).toLocaleDateString('pt-BR') : undefined,
+          AtualizadoEmHora: atualizado ? (() => {
             const d = new Date(post.updatedAt);
             const h = d.getHours().toString().padStart(2, '0');
             const m = d.getMinutes().toString().padStart(2, '0');
@@ -99,14 +107,21 @@ class PostsController {
 
       if (!post) return res.status(404).json({ message: "Post não encontrado" });
 
+      const atualizado = foiAtualizado(post.createdAt, post.updatedAt);
+
+      const comentariosCount = await Comentario.countDocuments({ post: post._id });
+
       res.json({
+        id: post._id,
         titulo: post.titulo,
         autor: post.autoria,
         conteudo: post.conteudo,
         areaDoConhecimento: post.areaDoConhecimento,
         status: post.status || "publicado",
+        imagem: post.imagem,
         CriadoEm: formatarData(post.createdAt),
-        AtualizadoEm: post.updatedAt ? formatarData(post.updatedAt) : undefined
+        AtualizadoEm: atualizado ? formatarData(post.updatedAt) : undefined,
+        comentariosCount,
       });
     } catch (err) {
       res.status(500).json({ message: err.message });
@@ -153,7 +168,7 @@ class PostsController {
         status: novoPost.status,
         imagem: novoPost.imagem,
         CriadoEm: formatarData(novoPost.createdAt),
-        AtualizadoEm: novoPost.updatedAt ? formatarData(novoPost.updatedAt) : undefined
+        AtualizadoEm: foiAtualizado(novoPost.createdAt, novoPost.updatedAt) ? formatarData(novoPost.updatedAt) : undefined
       });
     } catch (err) {
       res.status(400).json({ message: err.message });
