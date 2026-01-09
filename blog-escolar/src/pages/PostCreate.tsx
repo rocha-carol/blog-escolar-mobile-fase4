@@ -3,7 +3,7 @@ import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPost } from "../services/postService";
 import useAuth from "../hooks/useAuth";
-import Cropper, { type Area } from "react-easy-crop";
+import Cropper, { type Area } from "../components/SimpleCropper";
 import "../styles/center.css";
 import "../styles/cropper.css";
 // Import de uuid removido pois não é utilizado
