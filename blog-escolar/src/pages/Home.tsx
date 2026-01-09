@@ -348,15 +348,6 @@ export const Home: React.FC = () => {
                       </span>
                     </div>
                   </Link>
-                  <button
-                    className="comentario-icone-btn"
-                    style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                    title="Ver comentários"
-                    onClick={() => abrirComentarios(destaque.id)}
-                  >
-                    <FaRegCommentDots size={20} color="#7c4dbe" />
-                    <span style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{(destaque as any).comentariosCount ?? 0}</span>
-                  </button>
                   {renderComentarios(destaque.id)}
                 </div>
               )}
@@ -438,15 +429,6 @@ export const Home: React.FC = () => {
                   </span>
                 </div>
               </Link>
-              <button
-                className="comentario-icone-btn"
-                style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                title="Ver comentários"
-                onClick={() => abrirComentarios(post.id)}
-              >
-                <FaRegCommentDots size={20} color="#7c4dbe" />
-                <span style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{(post as any).comentariosCount ?? 0}</span>
-              </button>
               {renderComentarios(post.id)}
             </div>
           ))}
@@ -521,15 +503,6 @@ export const Home: React.FC = () => {
                   </span>
                 </div>
               </Link>
-              <button
-                className="comentario-icone-btn"
-                style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                title="Ver comentários"
-                onClick={() => abrirComentarios(post.id)}
-              >
-                <FaRegCommentDots size={20} color="#7c4dbe" />
-                <span style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{(post as any).comentariosCount ?? 0}</span>
-              </button>
               {renderComentarios(post.id)}
             </div>
           ))}
@@ -630,15 +603,6 @@ export const Home: React.FC = () => {
                   </div>
                 </div>
               </Link>
-              <button
-                className="comentario-icone-btn"
-                style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                title="Ver comentários"
-                onClick={() => abrirComentarios(post.id)}
-              >
-                <FaRegCommentDots size={20} color="#7c4dbe" />
-                <span style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{(post as any).comentariosCount ?? 0}</span>
-              </button>
               {renderComentarios(post.id)}
             </div>
           ))}
