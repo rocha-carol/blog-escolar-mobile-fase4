@@ -4,7 +4,8 @@ import bcrypt from "bcryptjs";
 // Middleware para validar professor via email e senha
 async function validarProfessor(req, res, next) {
   try {
-    const { email, senha } = req.body;
+    const email = req.body.email || req.headers["x-email"] || req.query.email;
+    const senha = req.body.senha || req.headers["x-senha"] || req.query.senha;
 
     if (!email || !senha) {
       return res.status(401).json({ message: "Usuário não cadastrado ou senha incorreta" });

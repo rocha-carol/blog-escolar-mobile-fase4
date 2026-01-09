@@ -47,6 +47,15 @@ O frontend foi desenvolvido em React (Vite + TypeScript) e utiliza:
 
 A aplicação é configurada para rodar localmente e consumir o backend durante o desenvolvimento.
 
+### Mobile
+O mobile foi desenvolvido com **React Native (Expo)** e adota:
+
+- **React Navigation** para fluxos autenticados e navegação por abas.
+- **Axios** com interceptors para envio automático das credenciais do professor.
+- **AsyncStorage** para persistência de sessão.
+
+A estrutura do aplicativo foi organizada por pastas (`screens`, `services`, `contexts`, `navigation`) para facilitar manutenção e escalabilidade.
+
 ## Uso da aplicação
 
 ### Pré-requisitos
@@ -82,6 +91,22 @@ A aplicação é configurada para rodar localmente e consumir o backend durante 
    npm run dev
    ```
 3. A aplicação ficará disponível em `http://localhost:5173` (porta padrão do Vite).
+
+### Mobile
+1. Instale as dependências:
+   ```bash
+   cd mobile
+   npm install
+   ```
+2. Defina a variável de ambiente com a URL da API (no shell ou `.env`):
+   ```bash
+   export EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
+   ```
+3. Inicie o Expo:
+   ```bash
+   npm run start
+   ```
+4. Use o Expo Go no dispositivo ou um emulador para abrir o app.
 
 ## Relato de experiências e desafios
 
