@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { FaUserCircle } from 'react-icons/fa';
 import useAuth from '../hooks/useAuth';
-import { FaFont, FaLowVision, FaArrowsAltV } from 'react-icons/fa';
+import { FaFont, FaArrowsAltV } from 'react-icons/fa';
 import { MdAccessibility } from 'react-icons/md';
 import { AiOutlinePlus, AiOutlineMinus } from 'react-icons/ai';
 // ...existing code...
 import NightModeToggle from './NightModeToggle';
 
 const options = [
-  { key: 'highContrast', label: 'Alto contraste', icon: <FaLowVision /> },
   { key: 'spacing', label: 'Espaçamento', icon: <FaArrowsAltV /> },
   { key: 'audio', label: 'Leitura por áudio', icon: <FaFont /> },
 ];
@@ -19,19 +18,13 @@ const AccessibilityBar: React.FC = () => {
 
   const [fontSize, setFontSize] = React.useState(1);
   React.useEffect(() => {
-    document.body.style.fontSize = fontSize !== 1 ? `${fontSize}em` : '';
+    document.documentElement.style.fontSize = fontSize !== 1 ? `${fontSize}em` : '';
     document.body.style.letterSpacing = selected.includes('spacing') ? '0.12em' : '';
     document.body.style.wordSpacing = selected.includes('spacing') ? '0.18em' : '';
-    if (selected.includes('highContrast')) {
-      document.body.classList.add('high-contrast');
-    } else {
-      document.body.classList.remove('high-contrast');
-    }
     return () => {
-      document.body.style.fontSize = '';
+      document.documentElement.style.fontSize = '';
       document.body.style.letterSpacing = '';
       document.body.style.wordSpacing = '';
-      document.body.classList.remove('high-contrast');
       document.body.classList.remove('night-mode');
     };
   }, [selected, fontSize]);
