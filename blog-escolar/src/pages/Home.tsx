@@ -515,23 +515,10 @@ export const Home: React.FC = () => {
               <Link
                 to={`/post/${post.id}`}
                 className="home-card-leia"
-                style={{
-                  display: 'flex',
-                  alignItems: 'stretch',
-                  gap: 16,
-                }}
               >
                 <div
+                  className="home-card-leia-media"
                   aria-hidden={!post.imagem}
-                  style={{
-                    width: 170,
-                    height: 170,
-                    borderRadius: 12,
-                    flexShrink: 0,
-                    overflow: 'hidden',
-                    background: '#eee',
-                    display: 'flex',
-                  }}
                 >
                   {post.imagem && (
                     <img
@@ -546,7 +533,7 @@ export const Home: React.FC = () => {
                     />
                   )}
                 </div>
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', padding: '8px 14px 8px 0' }}>
+                <div className="home-card-leia-content">
                   {/* Área (esq) e Publicado/Atualizado (dir) */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'nowrap', marginBottom: 6 }}>
                     <span className="categoria" style={{ marginBottom: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%', fontSize: '0.78rem', padding: '2px 10px' }}>

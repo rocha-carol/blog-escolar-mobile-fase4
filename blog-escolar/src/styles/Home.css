@@ -468,6 +468,23 @@
   height: 170px;
   transition: box-shadow 0.2s, transform 0.2s;
 }
+.home-card-leia-media {
+  width: 170px;
+  height: 170px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #eee;
+  display: flex;
+}
+.home-card-leia-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px 14px 8px 0;
+}
 .home-card-leia:hover {
   box-shadow: 0 12px 26px rgba(24, 20, 57, 0.16);
   transform: translateY(-2px);
@@ -514,6 +531,17 @@
   .home-card-leia {
     min-height: 0;
     height: auto;
+  }
+  .home-card-leia {
+    flex-direction: column;
+  }
+  .home-card-leia-media {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+  .home-card-leia-content {
+    padding: 10px 12px 12px;
   }
   .home-card-ultima-quad {
     aspect-ratio: auto;
