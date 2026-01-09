@@ -476,6 +476,15 @@
     grid-template-columns: 1fr;
     min-width: 0;
   }
+  .home-card-ultima-ret,
+  .home-card-ultima-quad,
+  .home-card-leia {
+    min-height: 0;
+    height: auto;
+  }
+  .home-card-ultima-quad {
+    aspect-ratio: auto;
+  }
   .home-card-leia-img img {
     width: 48px;
     height: 48px;
@@ -496,6 +505,10 @@
   .home-card-destaque, .home-card-lateral {
     min-width: 0;
     max-width: 100%;
+  }
+  .home-card-destaque {
+    height: auto;
+    min-height: 0;
   }
 }
 @media (max-width: 700px) {
