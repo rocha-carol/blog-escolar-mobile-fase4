@@ -119,13 +119,14 @@ export const Home: React.FC = () => {
               onSubmit={async e => {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;
-                const input = form.elements.namedItem('novoComentario') as HTMLInputElement;
+                const input = form.elements.namedItem('novoComentario') as HTMLTextAreaElement;
                 const texto = input.value.trim();
                 if (!texto) return;
                 input.disabled = true;
                 try {
                   await criarComentario(comentariosAbertos!, texto, nomeComentario);
                   await refetchComentarios();
+                  await refetchPosts();
                   input.value = '';
                 } catch (err) {
                   alert('Erro ao enviar comentário.');
@@ -134,16 +135,17 @@ export const Home: React.FC = () => {
               }}
               className="comentarios-form"
             >
-              <input
+              <textarea
                 name="novoComentario"
-                type="text"
                 placeholder="Escreva um comentário..."
-                disabled={!user}
+                ref={novoComentarioRef}
+                rows={2}
               />
-              <button type="submit" disabled={!user}>
+              <button type="submit">
                 Comentar
               </button>
             </form>
+            <div className="comentarios-identidade">Comentando como <strong>{nomeComentario}</strong></div>
             {comentarios.length === 0 ? (
               <p className="comentarios-vazio">Nenhum comentário ainda.</p>
             ) : (
@@ -162,6 +164,7 @@ export const Home: React.FC = () => {
                           try {
                             await excluirComentario(com._id);
                             await refetchComentarios();
+                            await refetchPosts();
                           } catch (err) {
                             alert('Erro ao excluir comentário.');
                           }

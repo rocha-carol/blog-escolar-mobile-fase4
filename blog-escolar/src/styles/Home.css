@@ -772,12 +772,18 @@
   margin-bottom: 12px;
 }
 
-.comentarios-form input {
+.comentarios-form input,
+.comentarios-form textarea {
   flex: 1;
   padding: 8px;
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 0.95rem;
+}
+
+.comentarios-form textarea {
+  resize: vertical;
+  min-height: 44px;
 }
 
 .comentarios-form button {
@@ -791,9 +797,17 @@
 }
 
 .comentarios-form button:disabled,
-.comentarios-form input:disabled {
+.comentarios-form input:disabled,
+.comentarios-form textarea:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.comentarios-identidade {
+  margin-top: -6px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: #666;
 }
 
 .comentarios-vazio {
