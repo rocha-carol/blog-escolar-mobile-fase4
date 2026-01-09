@@ -5,11 +5,20 @@ import colors from "../theme/colors";
 import { deletePost, fetchPosts } from "../services/posts";
 import type { Post } from "../types";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../contexts/AuthContext";
 
 const AdminPostsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role !== "professor") {
+      Alert.alert("Acesso restrito", "Apenas professores podem administrar postagens.");
+      navigation.navigate("Posts");
+    }
+  }, [navigation, user]);
 
   const loadPosts = async () => {
     setLoading(true);
@@ -38,6 +47,15 @@ const AdminPostsScreen: React.FC = () => {
       },
     ]);
   };
+
+  if (!user || user.role !== "professor") {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Acesso restrito</Text>
+        <Text>Somente professores podem administrar postagens.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

@@ -6,13 +6,22 @@ import colors from "../theme/colors";
 import { registerUser } from "../services/auth";
 import { fetchUser, updateUser } from "../services/users";
 import type { UserRole } from "../types";
+import { useAuth } from "../contexts/AuthContext";
 
 const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
   const { mode, role, userId } = route.params;
+  const { user } = useAuth();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role !== "professor") {
+      Alert.alert("Acesso restrito", "Apenas professores podem gerenciar usuários.");
+      navigation.navigate("Main");
+    }
+  }, [navigation, user]);
 
   useEffect(() => {
     if (mode === "edit" && userId) {
@@ -22,6 +31,15 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
       });
     }
   }, [mode, userId]);
+
+  if (!user || user.role !== "professor") {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+        <Text style={styles.title}>Acesso restrito</Text>
+        <Text>Somente professores podem cadastrar ou editar usuários.</Text>
+      </ScrollView>
+    );
+  }
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -43,7 +61,11 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text style={styles.title}>{mode === "edit" ? "Editar usuário" : "Novo usuário"}</Text>
+      <Text style={styles.title}>
+        {mode === "edit"
+          ? `Editar ${role === "professor" ? "professor" : "aluno"}`
+          : `Novo ${role === "professor" ? "professor" : "aluno"}`}
+      </Text>
       <AppInput label="Nome" value={nome} onChangeText={setNome} />
       <AppInput label="Email" value={email} onChangeText={setEmail} />
       <AppInput
