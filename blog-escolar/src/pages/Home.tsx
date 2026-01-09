@@ -81,95 +81,91 @@ export const Home: React.FC = () => {
 
   // Função para abrir comentários de um post
   const abrirComentarios = (postId: string) => {
-    setComentariosAbertos(postId);
+    setComentariosAbertos((atual) => (atual === postId ? null : postId));
   };
 
-  // Função para fechar comentários
-  const fecharComentarios = () => {
-    setComentariosAbertos(null);
+  const renderComentarios = (postId: string) => {
+    if (comentariosAbertos !== postId) return null;
+
+    return (
+      <div className="comentarios-card">
+        <div className="comentarios-header">
+          <h4>Comentários</h4>
+        </div>
+        {comentariosLoading ? (
+          <p>Carregando comentários...</p>
+        ) : (
+          <>
+            <form
+              onSubmit={async e => {
+                e.preventDefault();
+                const form = e.target as HTMLFormElement;
+                const input = form.elements.namedItem('novoComentario') as HTMLInputElement;
+                const texto = input.value.trim();
+                if (!texto) return;
+                input.disabled = true;
+                try {
+                  await criarComentario(comentariosAbertos!, texto, user?.nome ?? "");
+                  await refetchComentarios();
+                  input.value = '';
+                } catch (err) {
+                  alert('Erro ao enviar comentário.');
+                }
+                input.disabled = false;
+              }}
+              className="comentarios-form"
+            >
+              <input
+                name="novoComentario"
+                type="text"
+                placeholder="Escreva um comentário..."
+                disabled={!user}
+              />
+              <button type="submit" disabled={!user}>
+                Comentar
+              </button>
+            </form>
+            {comentarios.length === 0 ? (
+              <p className="comentarios-vazio">Nenhum comentário ainda.</p>
+            ) : (
+              <ul className="comentarios-lista">
+                {comentarios.map(com => (
+                  <li key={com._id}>
+                    <div className="comentarios-autor">
+                      {typeof com.autor === 'string' ? com.autor : com.autor?.nome || 'Usuário'}
+                    </div>
+                    <div className="comentarios-texto">{com.texto}</div>
+                    <div className="comentarios-data">{new Date(com.criadoEm).toLocaleString('pt-BR')}</div>
+                    {user?.role === 'professor' && (
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm('Excluir este comentário?')) return;
+                          try {
+                            await excluirComentario(com._id);
+                            await refetchComentarios();
+                          } catch (err) {
+                            alert('Erro ao excluir comentário.');
+                          }
+                        }}
+                        className="comentarios-excluir"
+                        title="Excluir comentário"
+                      >
+                        Excluir
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
+    );
   };
 
   return (
     <>
       <div className="home-container page-center">
-      {/* Modal de comentários */}
-      {comentariosAbertos && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', zIndex: 1000,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 24, minWidth: 340, maxWidth: 420, maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 4px 24px #0003', position: 'relative' }}>
-            <button onClick={fecharComentarios} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#7c4dbe' }}>×</button>
-            <h3 style={{ color: '#7c4dbe', marginBottom: 12 }}>Comentários</h3>
-            {comentariosLoading ? (
-              <p>Carregando comentários...</p>
-            ) : (
-              <>
-                <form
-                  onSubmit={async e => {
-                    e.preventDefault();
-                    const form = e.target as HTMLFormElement;
-                    const input = form.elements.namedItem('novoComentario') as HTMLInputElement;
-                    const texto = input.value.trim();
-                    if (!texto) return;
-                    input.disabled = true;
-                    try {
-                      await criarComentario(comentariosAbertos!, texto, user?.nome ?? "");
-                      await refetchComentarios();
-                      input.value = '';
-                    } catch (err) {
-                      alert('Erro ao enviar comentário.');
-                    }
-                    input.disabled = false;
-                  }}
-                  style={{ display: 'flex', gap: 8, marginBottom: 16 }}
-                >
-                  <input
-                    name="novoComentario"
-                    type="text"
-                    placeholder="Escreva um comentário..."
-                    style={{ flex: 1, padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
-                    disabled={!user}
-                  />
-                  <button type="submit" style={{ background: '#7c4dbe', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontWeight: 600, cursor: 'pointer' }} disabled={!user}>
-                    Comentar
-                  </button>
-                </form>
-                {comentarios.length === 0 ? (
-                  <p style={{ color: '#888' }}>Nenhum comentário ainda.</p>
-                ) : (
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    {comentarios.map(com => (
-                      <li key={com._id} style={{ borderBottom: '1px solid #eee', padding: '8px 0', position: 'relative' }}>
-                        <div style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{typeof com.autor === 'string' ? com.autor : com.autor?.nome || 'Usuário'}</div>
-                        <div style={{ fontSize: 14, color: '#444', margin: '2px 0 4px 0' }}>{com.texto}</div>
-                        <div style={{ fontSize: 12, color: '#888' }}>{new Date(com.criadoEm).toLocaleString('pt-BR')}</div>
-                        {user?.role === 'professor' && (
-                          <button
-                            onClick={async () => {
-                              if (!window.confirm('Excluir este comentário?')) return;
-                              try {
-                                await excluirComentario(com._id);
-                                await refetchComentarios();
-                              } catch (err) {
-                                alert('Erro ao excluir comentário.');
-                              }
-                            }}
-                            style={{ position: 'absolute', top: 8, right: 0, background: 'none', border: 'none', color: '#e04d4d', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}
-                            title="Excluir comentário"
-                          >
-                            Excluir
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
       {/* Nome do usuário e botão de login/logout agora estão na barra de acessibilidade */}
       <h1 className="titulo-principal" style={{ color: '#222', textAlign: 'center', width: '100%' }}>Blog escolar</h1>
       {user?.role === "professor" && (
@@ -271,6 +267,7 @@ export const Home: React.FC = () => {
                     <FaRegCommentDots size={20} color="#7c4dbe" />
                     <span style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{(destaque as any).comentariosCount ?? 0}</span>
                   </button>
+                  {renderComentarios(destaque.id)}
                 </div>
               )}
             </div>
@@ -309,6 +306,7 @@ export const Home: React.FC = () => {
                 <FaRegCommentDots size={20} color="#7c4dbe" />
                 <span style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{(post as any).comentariosCount ?? 0}</span>
               </button>
+              {renderComentarios(post.id)}
             </div>
           ))}
         </div>
@@ -345,6 +343,7 @@ export const Home: React.FC = () => {
                 <FaRegCommentDots size={20} color="#7c4dbe" />
                 <span style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{(post as any).comentariosCount ?? 0}</span>
               </button>
+              {renderComentarios(post.id)}
             </div>
           ))}
         </div>
@@ -379,6 +378,7 @@ export const Home: React.FC = () => {
                 <FaRegCommentDots size={20} color="#7c4dbe" />
                 <span style={{ fontWeight: 600, color: '#7c4dbe', fontSize: 15 }}>{(post as any).comentariosCount ?? 0}</span>
               </button>
+              {renderComentarios(post.id)}
             </div>
           ))}
         </div>
