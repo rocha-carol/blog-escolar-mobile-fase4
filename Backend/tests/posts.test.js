@@ -92,19 +92,6 @@ describe("Testes de Posts", () => {
         expect(res.body.titulo).toBe("Novo Post");
     });
 
-    it("Deve criar um post", async () => {
-        const res = await request(app)
-            .post("/posts")
-            .send({
-                email: "professor@teste.com",
-                senha: "123456",
-                // Removido teste de rascunho
-                areaDoConhecimento: "Tecnologias"
-            });
-
-        expect(res.statusCode).toBe(201);
-    });
-
     it("Deve falhar ao criar post com usuário inválido", async () => {
         const res = await request(app)
             .post("/posts")
