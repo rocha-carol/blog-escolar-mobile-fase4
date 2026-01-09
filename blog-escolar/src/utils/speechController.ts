@@ -4,7 +4,7 @@ type Listener = (state: SpeechState) => void;
 
 let state: SpeechState = 'idle';
 let currentText: string | null = null;
-let listeners = new Set<Listener>();
+const listeners = new Set<Listener>();
 
 const emit = () => {
   for (const l of listeners) l(state);

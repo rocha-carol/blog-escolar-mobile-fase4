@@ -1,5 +1,5 @@
 import AudioRead from '../components/AudioRead';
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FaRegCommentDots } from "react-icons/fa";
 import { listarComentarios, criarComentario, excluirComentario } from "../services/comentarioService";
 import type { Comentario } from "../services/comentarioService";
@@ -19,14 +19,11 @@ const AREAS_CONHECIMENTO = [
 
 export const Home: React.FC = () => {
   const { user } = useAuth();
-  const nomeComentario = useMemo(() => (user?.nome?.trim() ? user.nome.trim() : "Anônimo"), [user?.nome]);
+  const nomeComentario = user?.nome?.trim() ? user.nome.trim() : "Anônimo";
   const [search, setSearch] = useState("");
   const [areaSelecionada, setAreaSelecionada] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, areaSelecionada]);
   const {
     data: postsResponse,
     isLoading,
@@ -61,13 +58,13 @@ export const Home: React.FC = () => {
   const ultimas: Post[] = posts.slice(1); // todos os demais posts vão para as listas abaixo
 
   const getNomeAutor = (p: Post) => {
-    const autorValue = (p as any).autor;
+    const autorValue = p.autor;
     if (typeof autorValue === 'object' && autorValue !== null && 'nome' in autorValue) {
       return (autorValue as { nome?: string }).nome || 'Autor desconhecido';
     }
     if (typeof autorValue === 'string' && autorValue.trim()) return autorValue;
 
-    const autoriaFallback = (p as any).autoria;
+    const autoriaFallback = (p as Post & { autoria?: string }).autoria;
     if (typeof autoriaFallback === 'string' && autoriaFallback.trim()) return autoriaFallback;
 
     return 'Autor desconhecido';
@@ -129,6 +126,7 @@ export const Home: React.FC = () => {
                   await refetchPosts();
                   input.value = '';
                 } catch (err) {
+                  console.error('Erro ao enviar comentário:', err);
                   alert('Erro ao enviar comentário.');
                 }
                 input.disabled = false;
@@ -166,6 +164,7 @@ export const Home: React.FC = () => {
                             await refetchComentarios();
                             await refetchPosts();
                           } catch (err) {
+                            console.error('Erro ao excluir comentário:', err);
                             alert('Erro ao excluir comentário.');
                           }
                         }}
@@ -217,7 +216,10 @@ export const Home: React.FC = () => {
           className="home-busca"
           placeholder="O que você procura?"
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           style={{ width: '100%', maxWidth: 440, padding: '12px 20px', borderRadius: 12, border: '2px solid #7c4dbe', fontSize: '1.15rem', boxShadow: '0 4px 16px #7c4dbe22', marginBottom: 0 }}
         />
       </div>
@@ -259,7 +261,10 @@ export const Home: React.FC = () => {
           {areaSelecionada && (
             <button
               style={{ marginTop: 8, background: '#e04d4d', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }}
-              onClick={() => setAreaSelecionada(null)}
+              onClick={() => {
+                setAreaSelecionada(null);
+                setPage(1);
+              }}
             >
               Limpar filtro
             </button>

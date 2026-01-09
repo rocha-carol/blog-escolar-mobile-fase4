@@ -13,7 +13,10 @@ import {
 
 const AudioRead: React.FC<AudioReadProps> = ({ text, label = 'Ouvir', style }) => {
   const [speechState, setSpeechState] = React.useState<SpeechState>('idle');
-  const [audioEnabled, setAudioEnabled] = React.useState<boolean>(() => Boolean((window as any).__audioAccessibilityEnabled));
+  const [audioEnabled, setAudioEnabled] = React.useState<boolean>(() => {
+    const windowWithAudioFlag = window as Window & { __audioAccessibilityEnabled?: boolean };
+    return Boolean(windowWithAudioFlag.__audioAccessibilityEnabled);
+  });
 
   React.useEffect(() => {
     return subscribeSpeechState(setSpeechState);

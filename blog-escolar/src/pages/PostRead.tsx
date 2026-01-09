@@ -1,13 +1,9 @@
 import AudioRead from '../components/AudioRead';
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FaRegCommentDots } from "react-icons/fa";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getPostById } from "../services/postService";
 import type { Post } from "../services/postService";
-import { criarComentario, excluirComentario, listarComentarios } from "../services/comentarioService";
-import type { Comentario } from "../services/comentarioService";
 import useQuery from "../hooks/useQuery";
-import useAuth from "../hooks/useAuth";
 import "../styles/PostRead.css";
 import "../styles/center.css";
 
@@ -16,49 +12,20 @@ import "../styles/center.css";
 const PostRead: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const nomeComentario = useMemo(() => (user?.nome?.trim() ? user.nome.trim() : "Anônimo"), [user?.nome]);
-  const [comentariosAbertos, setComentariosAbertos] = useState(false);
-  const novoComentarioRef = useRef<HTMLTextAreaElement | null>(null);
   const {
     data: post,
     isLoading,
     isError,
-    refetch: refetchPost,
   } = useQuery<Post>({
     queryKey: ["post", id],
     enabled: Boolean(id),
     queryFn: () => getPostById(id as string),
   });
 
-  const {
-    data: comentariosRaw,
-    isLoading: comentariosLoading,
-    refetch: refetchComentarios,
-  } = useQuery<Comentario[]>({
-    queryKey: ["comentarios", id, comentariosAbertos],
-    enabled: Boolean(id) && comentariosAbertos,
-    queryFn: () => listarComentarios(id as string),
-  });
-
-  const comentarios = comentariosRaw ?? [];
-
-  useEffect(() => {
-    if (!comentariosAbertos) return;
-    const t = window.setTimeout(() => {
-      novoComentarioRef.current?.focus();
-    }, 0);
-    return () => window.clearTimeout(t);
-  }, [comentariosAbertos]);
-
   if (!id) return <p style={{ color: 'red', textAlign: 'center' }}>ID inválido.</p>;
   if (isLoading) return <p style={{ textAlign: 'center' }}>Carregando...</p>;
   if (isError) return <p style={{ color: 'red', textAlign: 'center' }}>Post não encontrado.</p>;
   if (!post) return null;
-
-  const criado = post.CriadoEm;
-  const atualizado = post.AtualizadoEm;
-  const foiAtualizado = Boolean(atualizado) && atualizado !== criado;
 
   return (
     <div className="page-center postread-page">

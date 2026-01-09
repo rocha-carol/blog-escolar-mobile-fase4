@@ -11,7 +11,7 @@ class ErrorBoundary extends React.Component<ChildrenProps, { hasError: boolean }
     return { hasError: true };
   }
 
-  componentDidCatch(error: any, info: any) {
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
     // Você pode logar o erro em algum serviço externo aqui
     console.error("Erro capturado pelo ErrorBoundary:", error, info);
   }

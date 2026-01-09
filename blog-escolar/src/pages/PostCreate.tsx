@@ -1,9 +1,9 @@
 import AudioRead from '../components/AudioRead';
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPost } from "../services/postService";
 import useAuth from "../hooks/useAuth";
-import Cropper from "react-easy-crop";
+import Cropper, { type Area } from "react-easy-crop";
 import "../styles/center.css";
 import "../styles/cropper.css";
 // Import de uuid removido pois não é utilizado
@@ -16,21 +16,14 @@ const PostCreate: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [croppedImage, setCroppedImage] = useState<string | null>(null);
 
   // Estados para título, conteúdo, autor e imagem
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const { user } = useAuth();
-  const [author, setAuthor] = useState("");
-
-  // Preencher autoria automaticamente ao carregar
-  useEffect(() => {
-    if (user && user.nome) {
-      setAuthor(user.nome);
-    }
-  }, [user]);
+  const author = user?.nome ?? "";
 
   // Áreas do conhecimento
   const AREAS_CONHECIMENTO = [
@@ -57,8 +50,8 @@ const PostCreate: React.FC = () => {
 
   // Função chamada ao recortar
   // Função chamada ao recortar imagem
-  const onCropComplete = useCallback((_: any, croppedAreaPixels: any) => {
-    setCroppedAreaPixels(croppedAreaPixels);
+  const onCropComplete = useCallback((_: Area, croppedAreaPixelsValue: Area) => {
+    setCroppedAreaPixels(croppedAreaPixelsValue);
   }, []);
 
   // Função para gerar imagem recortada
@@ -133,7 +126,8 @@ const PostCreate: React.FC = () => {
       setTimeout(() => {
         navigate("/gerenciamentodepostagens");
       }, 1200);
-    } catch (err: any) {
+    } catch (err) {
+      console.error("Erro ao publicar o post:", err);
       setFeedback("Erro ao publicar o post. Tente novamente.");
     }
   };
@@ -221,7 +215,6 @@ const PostCreate: React.FC = () => {
       <input
         placeholder="Autor"
         value={author}
-        onChange={e => setAuthor(e.target.value)}
         required
         readOnly
         style={{ margin: '12px 0', width: '100%', maxWidth: 350, textAlign: 'center', background: '#f3f3f3', color: '#555', border: '1px solid #ddd' }}
