@@ -1,27 +1,35 @@
 import { Usuario } from "../models/Usuario.js";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 
-// Middleware para validar professor via JWT
+// Middleware para validar professor via email e senha
 async function validarProfessor(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Token não fornecido" });
+    const { email, senha } = req.body;
+
+    if (!email || !senha) {
+      return res.status(401).json({ message: "Usuário não cadastrado ou senha incorreta" });
     }
-    const token = authHeader.split(" ")[1];
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || "segredo_super_secreto");
-    } catch (err) {
-      return res.status(401).json({ message: "Token inválido" });
+
+    const usuario = await Usuario.findOne({ email });
+    if (!usuario) {
+      return res.status(400).json({ message: "Usuário não encontrado" });
     }
-    // Verifica se é professor
-    if (decoded.role !== "professor") {
+
+    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+    if (!senhaCorreta) {
+      return res.status(401).json({ message: "Usuário não cadastrado ou senha incorreta" });
+    }
+
+    if (usuario.role !== "professor") {
       return res.status(403).json({ message: "Acesso restrito a professores" });
     }
-    // Adiciona dados do usuário na requisição
-    req.usuario = decoded;
+
+    req.usuario = {
+      id: usuario._id,
+      nome: usuario.nome,
+      email: usuario.email,
+      role: usuario.role
+    };
     next();
   } catch (err) {
     return res.status(500).json({ message: err.message });
