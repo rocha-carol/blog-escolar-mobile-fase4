@@ -87,7 +87,13 @@ class PostsController {
         };
       }));
 
-      res.json(postsFormatados);
+      res.json({
+        posts: postsFormatados,
+        total,
+        page,
+        limit,
+        hasMore: skip + posts.length < total
+      });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -127,9 +133,13 @@ class PostsController {
     try {
       const { titulo, conteudo, areaDoConhecimento, status } = req.body;
 
-      // O usuário que vem do middleware
-      const usuario = req.usuario ? await Usuario.findById(req.usuario.id) : null;
-      if (!usuario) return res.status(400).json({ message: "Usuário não encontrado" });
+      if (!titulo || !conteudo || !areaDoConhecimento) {
+        return res.status(400).json({ message: "Título, conteúdo e área do conhecimento são obrigatórios" });
+      }
+
+      // O usuário que vem do token
+      const usuario = await Usuario.findById(req.usuario.id);
+      if (!usuario) return res.status(404).json({ message: "Usuário não encontrado" });
 
       // Se imagem foi enviada, salva buffer ou caminho (ajuste conforme sua persistência)
       let imagemUrl = null;
@@ -194,7 +204,7 @@ class PostsController {
         conteudo: post.conteudo,
         areaDoConhecimento: post.areaDoConhecimento,
         imagem: post.imagem,
-        "atualizado em": formatarData(post.updatedAt)
+        atualizadoEm: formatarData(post.updatedAt)
       });
     } catch (err) {
       res.status(400).json({ message: err.message });
