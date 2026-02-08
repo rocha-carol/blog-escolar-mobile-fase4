@@ -1,13 +1,31 @@
 import api from "./api";
 import type { PaginatedResponse, User, UserRole } from "../types";
 
+export async function createUser(payload:
+  | {
+      nome: string;
+      email: string;
+      role: "professor";
+    }
+  | {
+      nome: string;
+      role: "aluno";
+      rm: string;
+    }
+): Promise<User> {
+  const response = await api.post(`/usuarios`, payload);
+  return response.data.usuario;
+}
+
 export async function fetchUsers(params: {
   role: UserRole;
+  termo?: string;
   page?: number;
   limit?: number;
 }): Promise<PaginatedResponse<User>> {
   const searchParams = new URLSearchParams();
   searchParams.set("role", params.role);
+  if (params.termo?.trim()) searchParams.set("termo", params.termo.trim());
   if (params.page) searchParams.set("page", String(params.page));
   if (params.limit) searchParams.set("limit", String(params.limit));
 
@@ -30,8 +48,9 @@ export async function fetchUser(id: string): Promise<User> {
 
 export async function updateUser(id: string, payload: {
   nome: string;
-  email: string;
   role: UserRole;
+  email?: string;
+  rm?: string;
   senha?: string;
 }): Promise<User> {
   const response = await api.put(`/usuarios/${id}`, payload);

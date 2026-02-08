@@ -1,0 +1,33 @@
+# Dependências
+**/node_modules/
+
+# Builds
+**/dist/
+**/build/
+
+# Cobertura de testes
+**/coverage/
+
+# Expo
+**/.expo/
+
+# Variáveis de ambiente (manter arquivos de exemplo)
+**/.env
+**/.env.*
+!**/.env.exemplo
+!**/.env.example
+
+# Logs
+**/logs/
+**/*.log
+
+# Cache
+**/.cache/
+
+# IDEs/Editores
+.vscode/
+.idea/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

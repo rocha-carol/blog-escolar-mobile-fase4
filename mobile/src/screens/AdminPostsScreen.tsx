@@ -1,17 +1,68 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import AppButton from "../components/AppButton";
+import AppInput from "../components/AppInput";
 import colors from "../theme/colors";
 import { deletePost, fetchPosts } from "../services/posts";
 import type { Post } from "../types";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
 
 const AdminPostsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
+  const [termo, setTermo] = useState("");
+  const lastHandledCreatedTokenRef = useRef<number | null>(null);
+
+  const formatDateBR = (value?: string) => {
+    if (!value) return "--";
+    // Se já estiver no formato esperado (dd/MM/yyyy), mantém
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleDateString("pt-BR");
+  };
+
+  const toTimestamp = (dateValue?: string, timeValue?: string) => {
+    if (!dateValue) return 0;
+
+    // dd/MM/yyyy
+    const br = dateValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (br) {
+      const dia = Number(br[1]);
+      const mes = Number(br[2]);
+      const ano = Number(br[3]);
+      const d = new Date(ano, mes - 1, dia);
+      if (Number.isNaN(d.getTime())) return 0;
+
+      // Hora opcional no formato "HHhMM" (ex.: 14h05)
+      if (timeValue && /^\d{2}h\d{2}$/.test(timeValue)) {
+        const [hStr, mStr] = timeValue.split("h");
+        const h = Number(hStr);
+        const m = Number(mStr);
+        d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
+      }
+
+      return d.getTime();
+    }
+
+    const parsed = new Date(dateValue);
+    return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+  };
+
+  const getInfoDataPublicacao = (post: Post) => {
+    const criado = post.CriadoEm;
+    const atualizado = post.AtualizadoEm;
+    const foiAtualizado = Boolean(atualizado) && atualizado !== criado;
+    if (foiAtualizado) {
+      return { label: "Atualizado em", data: formatDateBR(atualizado) };
+    }
+    return { label: "Publicado em", data: formatDateBR(criado) };
+  };
 
   useEffect(() => {
     if (user && user.role !== "professor") {
@@ -20,19 +71,86 @@ const AdminPostsScreen: React.FC = () => {
     }
   }, [navigation, user]);
 
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async (opts?: { merge?: boolean }) => {
     setLoading(true);
     try {
-      const response = await fetchPosts();
-      setPosts(response.items);
+      const autor = user?.nome?.trim();
+      const response = await fetchPosts({ autor: autor || undefined, page: 1, limit: 50 });
+      const fetched = response.items ?? [];
+      if (!opts?.merge) {
+        setPosts(fetched);
+        return;
+      }
+
+      // Merge: mantém a ordem atual (inclui inserção otimista no topo) e atualiza itens vindos do backend.
+      setPosts((prev) => {
+        const prevIds = new Set(prev.map((p) => p._id));
+        const fetchedMap = new Map(fetched.map((p) => [p._id, p] as const));
+
+        const merged: Post[] = prev
+          .map((p) => fetchedMap.get(p._id) ?? p)
+          .filter((p) => Boolean(p?._id));
+
+        for (const p of fetched) {
+          if (!prevIds.has(p._id)) merged.push(p);
+        }
+
+        return merged;
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.nome]);
 
-  useEffect(() => {
-    loadPosts();
-  }, []);
+  // Ao focar na tela (voltar do formulário), injeta o post recém-criado no topo imediatamente.
+  useFocusEffect(
+    useCallback(() => {
+      const token = route?.params?.createdPostToken as number | undefined;
+      const createdPost = route?.params?.createdPost as Post | undefined;
+
+      if (token && token !== lastHandledCreatedTokenRef.current && createdPost?._id) {
+        lastHandledCreatedTokenRef.current = token;
+        setPosts((prev) => {
+          const withoutDup = prev.filter((p) => p._id !== createdPost._id);
+          return [createdPost, ...withoutDup];
+        });
+
+        // Limpa params para evitar reprocessar ao alternar abas.
+        navigation.setParams({ createdPost: undefined, createdPostToken: undefined });
+
+        // Faz um refetch em background para garantir consistência,
+        // mas sem apagar a inserção otimista caso o backend ainda não reflita o novo post.
+        loadPosts({ merge: true });
+        return;
+      }
+
+      loadPosts();
+    }, [loadPosts, navigation, route?.params?.createdPost, route?.params?.createdPostToken])
+  );
+
+  const filteredPosts = useMemo(() => {
+    const q = termo.trim().toLowerCase();
+    const base = !q
+      ? posts
+      : posts.filter((p) => {
+      const titulo = (p.titulo ?? "").toLowerCase();
+      const conteudo = (p.conteudo ?? "").toLowerCase();
+      const area = (p.areaDoConhecimento ?? "").toLowerCase();
+      return titulo.includes(q) || conteudo.includes(q) || area.includes(q);
+      });
+
+    // Ordena do mais recente para o mais antigo
+    return [...base].sort((a, b) => {
+      const ta =
+        toTimestamp(a.AtualizadoEm, a.AtualizadoEmHora) ||
+        toTimestamp(a.CriadoEm, a.CriadoEmHora);
+      const tb =
+        toTimestamp(b.AtualizadoEm, b.AtualizadoEmHora) ||
+        toTimestamp(b.CriadoEm, b.CriadoEmHora);
+      if (tb !== ta) return tb - ta;
+      return (b.titulo ?? "").localeCompare(a.titulo ?? "");
+    });
+  }, [posts, termo]);
 
   const handleDelete = (postId: string) => {
     Alert.alert("Excluir", "Deseja remover esta postagem?", [
@@ -60,17 +178,42 @@ const AdminPostsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Administração de postagens</Text>
+
+      <View style={styles.searchWrap}>
+        <AppInput
+          value={termo}
+          onChangeText={setTermo}
+          placeholder="Buscar por título, conteúdo ou área"
+          rightIconName="search-outline"
+          variant="soft"
+          density="compact"
+          containerStyle={{ marginBottom: 0 }}
+        />
+      </View>
+
       <View style={styles.addButton}>
-        <AppButton title="Criar postagem" onPress={() => navigation.navigate("PostForm", { mode: "create" })} />
+        <AppButton
+          title="Criar postagem"
+          onPress={() => navigation.navigate("PostForm", { mode: "create", origin: "Admin" })}
+        />
       </View>
       <FlatList
-        data={posts}
+        data={filteredPosts}
         keyExtractor={(item) => item._id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={loadPosts} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{item.titulo}</Text>
-            <Text style={styles.cardMeta}>Autor: {item.autoria || "Não informado"}</Text>
+            <Text style={styles.cardSummary} numberOfLines={2}>
+              {item.conteudo}
+            </Text>
+
+            <View style={styles.cardMetaRow}>
+              <Text style={styles.cardMeta} numberOfLines={1}>
+                {getInfoDataPublicacao(item).label} {getInfoDataPublicacao(item).data}
+              </Text>
+            </View>
+
             <View style={styles.actions}>
               <AppButton
                 title="Editar"
@@ -80,9 +223,18 @@ const AdminPostsScreen: React.FC = () => {
             </View>
           </View>
         )}
-        contentContainerStyle={[styles.listContent, posts.length === 0 && styles.listEmptyContent]}
+        contentContainerStyle={[
+          styles.listContent,
+          filteredPosts.length === 0 && styles.listEmptyContent,
+        ]}
         ListEmptyComponent={
-          !loading ? <Text style={styles.emptyText}>Nenhuma postagem cadastrada.</Text> : null
+          !loading ? (
+            <Text style={styles.emptyText}>
+              {posts.length === 0
+                ? "Você ainda não criou postagens."
+                : "Nenhuma postagem encontrada para o termo informado."}
+            </Text>
+          ) : null
         }
       />
     </View>
@@ -104,6 +256,9 @@ const styles = StyleSheet.create({
   addButton: {
     marginBottom: 16,
   },
+  searchWrap: {
+    marginBottom: 12,
+  },
   card: {
     padding: 16,
     backgroundColor: colors.white,
@@ -118,9 +273,20 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 4,
   },
+  cardSummary: {
+    color: colors.text,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  cardMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
   cardMeta: {
     color: colors.muted,
-    marginBottom: 12,
+    fontStyle: "italic",
   },
   actions: {
     flexDirection: "row",

@@ -21,6 +21,31 @@ const getNomeAutor = (autor: Post["autor"]) => {
   return "";
 };
 
+const toTimestampBR = (data?: string, hora?: string) => {
+  if (!data) return 0;
+
+  const br = data.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (br) {
+    const dia = Number(br[1]);
+    const mes = Number(br[2]);
+    const ano = Number(br[3]);
+    const d = new Date(ano, mes - 1, dia);
+    if (Number.isNaN(d.getTime())) return 0;
+
+    if (hora && /^\d{2}h\d{2}$/.test(hora)) {
+      const [hStr, mStr] = hora.split('h');
+      const h = Number(hStr);
+      const m = Number(mStr);
+      d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
+    }
+
+    return d.getTime();
+  }
+
+  const parsed = new Date(data);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+};
+
 const GerenciarPostagens: React.FC = () => {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
@@ -56,9 +81,13 @@ const GerenciarPostagens: React.FC = () => {
   const orderedPosts = useMemo(() => {
     const lista = postsResponse?.posts ? [...postsResponse.posts] : [];
     return lista.sort((a: Post, b: Post) => {
-      const dateA = new Date(a.AtualizadoEm || a.CriadoEm || 0).getTime();
-      const dateB = new Date(b.AtualizadoEm || b.CriadoEm || 0).getTime();
-      return dateB - dateA;
+      const tsA =
+        toTimestampBR(a.AtualizadoEm, a.AtualizadoEmHora) ||
+        toTimestampBR(a.CriadoEm, a.CriadoEmHora);
+      const tsB =
+        toTimestampBR(b.AtualizadoEm, b.AtualizadoEmHora) ||
+        toTimestampBR(b.CriadoEm, b.CriadoEmHora);
+      return tsB - tsA;
     });
   }, [postsResponse]);
 

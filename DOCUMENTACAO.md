@@ -1,6 +1,7 @@
 # Documentação do Sistema
 
 ## Visão geral
+
 Este sistema é composto por duas aplicações principais:
 
 - **Backend (API Blog)**: serviço RESTful em Node.js/Express com MongoDB para cadastro de usuários e gerenciamento de postagens.
@@ -11,7 +12,8 @@ O objetivo do projeto é disponibilizar uma plataforma de publicação simples, 
 ## Arquitetura do sistema
 
 ### Visão macro
-```
+
+```text
 [Cliente/Browser]
        |
        v
@@ -23,6 +25,7 @@ O objetivo do projeto é disponibilizar uma plataforma de publicação simples, 
 - **Banco de dados**: MongoDB, com uso de variáveis de ambiente para conexão.
 
 ### Backend (padrão MVC)
+
 O backend segue uma organização em **Model-View-Controller (MVC)**:
 
 - **Model**: definição das entidades (usuários e postagens).
@@ -39,6 +42,7 @@ Fluxo de dados:
 5. Controller retorna a resposta ao cliente.
 
 ### Frontend
+
 O frontend foi desenvolvido em React (Vite + TypeScript) e utiliza:
 
 - **React Router** para navegação entre páginas.
@@ -48,6 +52,7 @@ O frontend foi desenvolvido em React (Vite + TypeScript) e utiliza:
 A aplicação é configurada para rodar localmente e consumir o backend durante o desenvolvimento.
 
 ### Mobile
+
 O mobile foi desenvolvido com **React Native (Expo)** e adota:
 
 - **React Navigation** para fluxos autenticados e navegação por abas.
@@ -59,53 +64,73 @@ A estrutura do aplicativo foi organizada por pastas (`screens`, `services`, `con
 ## Uso da aplicação
 
 ### Pré-requisitos
+
 - Node.js 18+
 - npm 9+
 - MongoDB Atlas (ou instância local)
 
 ### Backend
+
 1. Instale as dependências:
+
    ```bash
    cd Backend
    npm install
    ```
+
 2. Configure o `.env` na raiz do backend (use a variável `MONGO_URI` para a conexão):
-   ```env
-   PORT=3000
-   MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/blog
-   ```
+
+    ```env
+    PORT=3000
+    MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/blog
+    ```
+
 3. Inicie o servidor:
-   ```bash
-   npm run dev
-   ```
+
+    ```bash
+    npm run dev
+    ```
+
 4. A API ficará disponível em `http://localhost:3000`.
 
-### Frontend
+### Frontend (web)
+
 1. Instale as dependências:
-   ```bash
-   cd blog-escolar
-   npm install
-   ```
+
+    ```bash
+    cd blog-escolar
+    npm install
+    ```
+
 2. Inicie o frontend:
-   ```bash
-   npm run dev
-   ```
+
+    ```bash
+    npm run dev
+    ```
+
 3. A aplicação ficará disponível em `http://localhost:5173` (porta padrão do Vite).
 
-### Mobile
+### Mobile (app)
+
 1. Instale as dependências:
-   ```bash
-   cd mobile
-   npm install
-   ```
+
+    ```bash
+    cd mobile
+    npm install
+    ```
+
 2. Defina a variável de ambiente com a URL da API (no shell ou `.env`):
-   ```bash
-   export EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
-   ```
+
+    ```bash
+    export EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
+    ```
+
 3. Inicie o Expo:
-   ```bash
-   npm run start
-   ```
+
+    ```bash
+    npm run start
+    ```
+
 4. Use o Expo Go no dispositivo ou um emulador para abrir o app.
 
 ## Relato de experiências e desafios

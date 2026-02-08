@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import AppButton from "../components/AppButton";
+import AppInput from "../components/AppInput";
 import colors from "../theme/colors";
 import { deleteUser, fetchUsers } from "../services/users";
 import type { UserRole, User } from "../types";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
 
 const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
@@ -14,23 +15,51 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [termo, setTermo] = useState("");
+  const [debouncedTermo, setDebouncedTermo] = useState("");
   const limit = 10;
 
-  const loadUsers = async (nextPage = 1) => {
+  useEffect(() => {
+    const trimmed = termo.trim();
+    const t = setTimeout(() => {
+      setDebouncedTermo(trimmed);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [termo]);
+
+  const loadUsers = useCallback(
+    async (nextPage = 1) => {
     setLoading(true);
     try {
-      const response = await fetchUsers({ role, page: nextPage, limit });
+      const response = await fetchUsers({ role, termo: debouncedTermo, page: nextPage, limit });
       setHasMore(response.hasMore);
       setPage(response.page);
-      setUsers((prev) => (nextPage === 1 ? response.items : [...prev, ...response.items]));
+      setUsers(response.items);
     } finally {
       setLoading(false);
     }
-  };
+    },
+    [debouncedTermo, limit, role]
+  );
 
   useEffect(() => {
     loadUsers(1);
-  }, [role]);
+  }, [loadUsers, role]);
+
+  useEffect(() => {
+    // Ao alterar o termo (após debounce), reinicia na página 1.
+    loadUsers(1);
+  }, [debouncedTermo, loadUsers]);
+
+  // Ao voltar do formulário (criar/editar) a tela ganha foco novamente.
+  // Recarregamos a página 1 para refletir as alterações na lista.
+  useFocusEffect(
+    useCallback(() => {
+      // Ao voltar do formulário (criar/editar), recarrega a página atual
+      // respeitando o termo de busca.
+      loadUsers(page);
+    }, [loadUsers, page])
+  );
 
   useEffect(() => {
     if (user && user.role !== "professor") {
@@ -62,9 +91,34 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
     );
   }
 
+  const sortedUsers = useMemo(() => {
+    const copy = [...users];
+    copy.sort((a, b) =>
+      (a.nome ?? "").localeCompare(b.nome ?? "", "pt-BR", {
+        sensitivity: "base",
+        ignorePunctuation: true,
+      })
+    );
+    return copy;
+  }, [users]);
+
+  const canGoPrev = page > 1;
+  const canGoNext = hasMore;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{role === "professor" ? "Professores" : "Alunos"}</Text>
+
+      <AppInput
+        label="Buscar"
+        value={termo}
+        onChangeText={setTermo}
+        placeholder={role === "professor" ? "Buscar por nome ou email" : "Buscar por nome ou RM"}
+        leftIconName="search-outline"
+        variant="soft"
+        density="compact"
+      />
+
       <View style={styles.addButton}>
         <AppButton
           title={role === "professor" ? "Cadastrar professor" : "Cadastrar aluno"}
@@ -72,13 +126,15 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
         />
       </View>
       <FlatList
-        data={users}
+        data={sortedUsers}
         keyExtractor={(item) => item.id}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={() => loadUsers(1)} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={() => loadUsers(page)} />}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{item.nome}</Text>
-            <Text style={styles.cardMeta}>{item.email}</Text>
+            <Text style={styles.cardMeta}>
+              {role === "professor" ? item.email : `RM: ${item.rm ?? ""}`}
+            </Text>
             <View style={styles.actions}>
               <AppButton
                 title="Editar"
@@ -89,14 +145,44 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
           </View>
         )}
         ListFooterComponent={
-          hasMore ? (
-            <View style={styles.footer}>
-              <AppButton title="Carregar mais" onPress={() => loadUsers(page + 1)} disabled={loading} />
+          <View style={styles.footer}>
+            <View style={styles.pagination}>
+              {canGoPrev ? (
+                <AppButton
+                  title="Anterior"
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => loadUsers(page - 1)}
+                  disabled={loading}
+                />
+              ) : (
+                <View style={styles.paginationSpacer} />
+              )}
+
+              <Text style={styles.paginationText}>Página {page}</Text>
+
+              {canGoNext ? (
+                <AppButton
+                  title="Próxima"
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => loadUsers(page + 1)}
+                  disabled={loading}
+                />
+              ) : (
+                <View style={styles.paginationSpacer} />
+              )}
             </View>
-          ) : null
+          </View>
         }
         contentContainerStyle={[styles.listContent, users.length === 0 && styles.listEmptyContent]}
-        ListEmptyComponent={!loading ? <Text style={styles.emptyText}>Nenhum usuário encontrado.</Text> : null}
+        ListEmptyComponent={
+          !loading ? (
+            <Text style={styles.emptyText}>
+              {debouncedTermo ? "Nenhum usuário encontrado para a busca." : "Nenhum usuário encontrado."}
+            </Text>
+          ) : null
+        }
       />
     </View>
   );
@@ -142,6 +228,20 @@ const styles = StyleSheet.create({
   },
   footer: {
     marginTop: 8,
+  },
+  pagination: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  paginationText: {
+    color: colors.muted,
+    fontWeight: "700",
+    textAlign: "center",
+    paddingHorizontal: 12,
+  },
+  paginationSpacer: {
+    width: 92,
   },
   listContent: {
     paddingVertical: 8,

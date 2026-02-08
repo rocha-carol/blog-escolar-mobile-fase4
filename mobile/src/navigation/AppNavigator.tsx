@@ -3,14 +3,17 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
+import HeaderLogoutButton from "../components/HeaderLogoutButton";
 import LoginScreen from "../screens/LoginScreen";
 import PostsListScreen from "../screens/PostsListScreen";
 import PostDetailsScreen from "../screens/PostDetailsScreen";
 import PostFormScreen from "../screens/PostFormScreen";
-import AdminPostsScreen from "../screens/AdminPostsScreen";
-import UsersListScreen from "../screens/UsersListScreen";
+import AdminProtectedScreen from "../screens/AdminProtectedScreen";
+import UserManagementProtectedScreen from "../screens/UserManagementProtectedScreen";
 import UserFormScreen from "../screens/UserFormScreen";
+import StudentScreen from "../screens/StudentScreen";
 import colors from "../theme/colors";
 
 const Stack = createNativeStackNavigator();
@@ -19,17 +22,48 @@ const Tab = createBottomTabNavigator();
 const MainTabs = () => {
   const { user } = useAuth();
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="Posts" component={PostsListScreen} />
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarStyle: user
+          ? { backgroundColor: colors.white, borderTopColor: colors.border }
+          : { display: "none" },
+        tabBarIcon: ({ color, size }) => {
+          switch (route.name) {
+            case "Posts":
+              return <Ionicons name="newspaper-outline" size={size} color={color} />;
+            case "Admin":
+              return <Ionicons name="settings-outline" size={size} color={color} />;
+            case "Professores":
+              return <Ionicons name="school-outline" size={size} color={color} />;
+            case "Alunos":
+              return <Ionicons name="people-outline" size={size} color={color} />;
+            default:
+              return <Ionicons name="apps-outline" size={size} color={color} />;
+          }
+        },
+      })}
+    >
+      <Tab.Screen name="Posts" component={PostsListScreen} options={{ title: "Início" }} />
       {user?.role === "professor" && (
         <>
-          <Tab.Screen name="Admin" component={AdminPostsScreen} />
+          <Tab.Screen
+            name="Admin"
+            component={AdminProtectedScreen}
+            options={{ title: "Gerenciar posts" }}
+          />
           <Tab.Screen
             name="Professores"
-            children={() => <UsersListScreen role="professor" />}
+            component={UserManagementProtectedScreen}
+            options={{ title: "Gerenciar usuários", unmountOnBlur: true }}
           />
-          <Tab.Screen name="Alunos" children={() => <UsersListScreen role="aluno" />} />
         </>
+      )}
+
+      {user?.role === "aluno" && (
+        <Tab.Screen name="Alunos" component={StudentScreen} options={{ title: "Alunos" }} />
       )}
     </Tab.Navigator>
   );
@@ -37,6 +71,7 @@ const MainTabs = () => {
 
 const AppNavigator = () => {
   const { user, loading } = useAuth();
+  const isProfessor = user?.role === "professor";
 
   if (loading) {
     return (
@@ -48,16 +83,46 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: true }}>
-        {user ? (
+      <Stack.Navigator
+        // A tela inicial do app deve ser a escolha de usuário.
+        // Mesmo com sessão salva, o usuário pode optar por continuar ou trocar.
+        initialRouteName="Login"
+        screenOptions={{
+          headerShown: true,
+          headerTitleAlign: "left",
+          headerTitle: "Blog Escolar",
+          headerStyle: { backgroundColor: colors.white },
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+          headerRight: () => <HeaderLogoutButton />,
+        }}
+      >
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{
+            title: "Blog Escolar",
+            headerRight: () => null,
+            headerBackVisible: false,
+          }}
+        />
+
+        {/* Rotas privadas: exibidas somente quando existe usuário autenticado. */}
+        {user && (
           <>
-            <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="PostDetails" component={PostDetailsScreen} options={{ title: "Post" }} />
-            <Stack.Screen name="PostForm" component={PostFormScreen} options={{ title: "Postagem" }} />
-            <Stack.Screen name="UserForm" component={UserFormScreen} options={{ title: "Usuário" }} />
+            <Stack.Screen name="Main" component={MainTabs} options={{ title: "Blog Escolar" }} />
+            <Stack.Screen
+              name="PostDetails"
+              component={PostDetailsScreen}
+              options={{ title: "Blog Escolar" }}
+            />
+            {isProfessor && (
+              <>
+                <Stack.Screen name="PostForm" component={PostFormScreen} options={{ title: "Blog Escolar" }} />
+                <Stack.Screen name="UserForm" component={UserFormScreen} options={{ title: "Blog Escolar" }} />
+              </>
+            )}
           </>
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

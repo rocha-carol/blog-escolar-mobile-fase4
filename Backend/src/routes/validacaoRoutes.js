@@ -123,4 +123,34 @@ validacaoRoutes.post("/registro", validacaoController.cadastrarUsuario);
  */
 validacaoRoutes.post("/login", validacaoController.login);
 
+/**
+ * @swagger
+ * /usuario/login-aluno:
+ *   post:
+ *     summary: Login de aluno (RM + nome)
+ *     tags: [usuario]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome
+ *               - rm
+ *             properties:
+ *               nome:
+ *                 type: string
+ *                 example: Nome do Aluno
+ *               rm:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Login de aluno bem-sucedido
+ *       401:
+ *         description: Aluno não encontrado ou dados inválidos
+ */
+validacaoRoutes.post("/login-aluno", validacaoController.loginAluno);
+
 export default validacaoRoutes;

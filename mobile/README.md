@@ -81,22 +81,31 @@ A base do app segue a separação por responsabilidade, com telas, navegação, 
 
 ### Guia de uso
 
-#### Login
+#### Seleção de usuário
 
 1. Abra o app.
-2. Informe email e senha.
-3. Toque em **Entrar**.
+2. Selecione o tipo de usuário.
+
+#### Login professor
+
+1. Informe email e senha.
+2. Toque em **Entrar**.
+
+#### Login aluno
+
+1. Informe nome completo e RM.
+2. Toque em **Entrar**.
 
 #### Postagens
 
 - **Listar posts:** tela inicial com busca.
 - **Ler post:** toque em um item para abrir os detalhes.
-- **Criar/editar post (docentes):** use os botões de ação na área administrativa.
+- **Criar/editar/excluir post (docentes):** use os botões de ação na área administrativa.
 
 #### Administração (docentes)
 
 - **Posts:** criação, edição e exclusão.
-- **Usuários:** cadastro, edição, listagem e exclusão de professores e alunos.
+- **Usuários:** cadastro, edição e exclusão de professores e alunos.
 
 ### Funcionalidades implementadas
 
@@ -104,7 +113,7 @@ A base do app segue a separação por responsabilidade, com telas, navegação, 
 - Leitura de post.
 - Criação e edição de posts (docentes).
 - Administração de posts (docentes).
-- Cadastro, edição, listagem e exclusão de professores e alunos (docentes).
+- Cadastro, edição, listagem e exclusão de professores e alunos.
 
 ### Observações
 

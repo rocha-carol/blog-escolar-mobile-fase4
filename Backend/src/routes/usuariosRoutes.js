@@ -4,6 +4,7 @@ import { validarProfessor } from "../middleware/validarProfessor.js";
 
 const usuariosRoutes = express.Router();
 
+usuariosRoutes.post("/", validarProfessor, UsuariosController.criarUsuario);
 usuariosRoutes.get("/", validarProfessor, UsuariosController.listarUsuarios);
 usuariosRoutes.get("/:id", validarProfessor, UsuariosController.obterUsuario);
 usuariosRoutes.put("/:id", validarProfessor, UsuariosController.atualizarUsuario);

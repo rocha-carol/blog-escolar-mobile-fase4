@@ -13,6 +13,13 @@ function formatarData(data) {
   return `${dia}/${mes}/${ano}`;
 }
 
+function formatarHora(data) {
+  const d = new Date(data);
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}h${m}`;
+}
+
 function criarResumo(conteudo) {
   if (!conteudo) return "";
   if (conteudo.length <= MAX_PREVIEW_LENGTH) return conteudo;
@@ -39,6 +46,7 @@ class PostsController {
   static async listarPosts(req, res) {
     try {
       // Suporte a paginação
+      const hasPagingParams = req.query.page !== undefined || req.query.limit !== undefined;
       const page = parseNumeroPositivo(req.query.page, 1);
       const limit = parseNumeroPositivo(req.query.limit, 10, 50);
       const skip = (page - 1) * limit;
@@ -50,11 +58,12 @@ class PostsController {
       }
 
       const total = await Posts.countDocuments(filtro);
-      const posts = await Posts.find(filtro)
+      const query = Posts.find(filtro)
         .lean()
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
+        // Mais recente primeiro: prioriza atualizações; se não houver, cai no createdAt.
+        .sort({ updatedAt: -1, createdAt: -1 });
+
+      const posts = hasPagingParams ? await query.skip(skip).limit(limit) : await query;
 
 
       // Busca contagem de comentários para cada post
@@ -87,7 +96,14 @@ class PostsController {
         };
       }));
 
-      res.json({
+      // Compatibilidade:
+      // - Sem page/limit: retorna array (usado em testes/integrações antigas)
+      // - Com page/limit: retorna objeto paginado (usado pelo mobile)
+      if (!hasPagingParams) {
+        return res.json(postsFormatados);
+      }
+
+      return res.json({
         posts: postsFormatados,
         total,
         page,
@@ -131,7 +147,7 @@ class PostsController {
   // Criar post (somente professores)
   static async criarPost(req, res) {
     try {
-      const { titulo, conteudo, areaDoConhecimento, status } = req.body;
+      const { titulo, conteudo, areaDoConhecimento, status, imagem } = req.body;
 
       if (!titulo || !conteudo || !areaDoConhecimento) {
         return res.status(400).json({ message: "Título, conteúdo e área do conhecimento são obrigatórios" });
@@ -146,6 +162,9 @@ class PostsController {
       if (req.file) {
         // Exemplo: salva como base64 no banco (não recomendado para produção)
         imagemUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      } else if (typeof imagem === "string" && imagem.trim()) {
+        // Suporta envio direto pelo body (URL ou data URL)
+        imagemUrl = imagem.trim();
       }
 
       const novoPost = new Posts({
@@ -161,13 +180,18 @@ class PostsController {
 
       res.status(201).json({
         message: "Post criado com sucesso",
+        // compatibilidade com o mobile (que usa _id)
+        _id: novoPost._id,
+        id: novoPost._id,
         titulo: novoPost.titulo,
         autor: novoPost.autoria,
+        autoria: novoPost.autoria,
         conteudo: criarResumo(novoPost.conteudo),
         areaDoConhecimento: novoPost.areaDoConhecimento,
         status: novoPost.status,
         imagem: novoPost.imagem,
         CriadoEm: formatarData(novoPost.createdAt),
+        CriadoEmHora: formatarHora(novoPost.createdAt),
         AtualizadoEm: foiAtualizado(novoPost.createdAt, novoPost.updatedAt) ? formatarData(novoPost.updatedAt) : undefined
       });
     } catch (err) {
@@ -179,12 +203,12 @@ class PostsController {
   static async editarPost(req, res) {
     try {
       const { id } = req.params;
-      const { titulo, conteudo, areaDoConhecimento, status } = req.body;
+      const { titulo, conteudo, areaDoConhecimento, status, imagem } = req.body;
 
       const post = await Posts.findById(id);
       if (!post) return res.status(404).json({ message: "Post não encontrado" });
 
-      if (!titulo && !conteudo && !areaDoConhecimento && !status && !req.file) {
+      if (!titulo && !conteudo && !areaDoConhecimento && !status && !req.file && !(typeof imagem === "string" && imagem.trim())) {
         return res.status(400).json({ message: "Nenhum dado enviado para atualização" });
       }
 
@@ -194,17 +218,26 @@ class PostsController {
       if (status) post.status = status;
       if (req.file) {
         post.imagem = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      } else if (typeof imagem === "string" && imagem.trim()) {
+        post.imagem = imagem.trim();
       }
 
       await post.save();
 
       res.json({
         message: "Post atualizado com sucesso",
+        // compatibilidade com o mobile (que usa _id)
+        _id: post._id,
+        id: post._id,
         titulo: post.titulo,
         conteudo: post.conteudo,
+        autor: post.autoria,
+        autoria: post.autoria,
         areaDoConhecimento: post.areaDoConhecimento,
         imagem: post.imagem,
-        atualizadoEm: formatarData(post.updatedAt)
+        AtualizadoEm: formatarData(post.updatedAt),
+        AtualizadoEmHora: formatarHora(post.updatedAt),
+        "atualizado em": formatarData(post.updatedAt)
       });
     } catch (err) {
       res.status(400).json({ message: err.message });
@@ -230,7 +263,7 @@ class PostsController {
   // Buscar posts por palavra-chave no título, conteúdo ou área do conhecimento
   static async buscarPosts(req, res) {
     try {
-      const { q } = req.query;
+      const q = req.query.q || req.query.palavra;
       if (!q) return res.status(400).json({ message: "Parâmetro de busca não informado" });
 
       const regex = new RegExp(q, "i");
@@ -241,13 +274,21 @@ class PostsController {
           { conteudo: regex },
           { areaDoConhecimento: regex },
         ]
-      }).lean();
+      })
+        .lean()
+        .sort({ updatedAt: -1, createdAt: -1 });
 
       const resultado = posts.map(post => ({
+        // compatibilidade com o mobile (que usa _id)
+        _id: post._id,
+        id: post._id,
         titulo: post.titulo,
         autor: post.autoria,
+        autoria: post.autoria,
         conteudo: criarResumo(post.conteudo),
         areaDoConhecimento: post.areaDoConhecimento,
+        imagem: post.imagem,
+        CriadoEm: formatarData(post.createdAt),
         "criado em": formatarData(post.createdAt)
       }));
 

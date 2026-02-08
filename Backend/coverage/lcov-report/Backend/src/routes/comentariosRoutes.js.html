@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">13.79% </span>
+                <span class="strong">12.5% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>4/29</span>
+                <span class='fraction'>4/32</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>0/12</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">15.38% </span>
+                <span class="strong">13.33% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>4/26</span>
+                <span class='fraction'>4/30</span>
             </div>
         
             
@@ -111,7 +111,16 @@
 <a name='L46'></a><a href='#L46'>46</a>
 <a name='L47'></a><a href='#L47'>47</a>
 <a name='L48'></a><a href='#L48'>48</a>
-<a name='L49'></a><a href='#L49'>49</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -123,6 +132,15 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -171,10 +189,19 @@ comentariosRoutes.post("/:postId", <span class="fstat-no" title="function not co
 <span class="cstat-no" title="statement not covered" >    try {</span>
         const { postId } = <span class="cstat-no" title="statement not covered" >req.params;</span>
         const { autor, texto } = <span class="cstat-no" title="statement not covered" >req.body;</span>
-<span class="cstat-no" title="statement not covered" >        if (!texto || !autor) <span class="cstat-no" title="statement not covered" >return res.status(400).json({ message: "Autor e texto obrigatórios" });</span></span>
+&nbsp;
+        const textoNormalizado = <span class="cstat-no" title="statement not covered" >typeof texto === "string" ? texto.trim() : "";</span>
+        const autorNormalizado = <span class="cstat-no" title="statement not covered" >typeof autor === "string" ? autor.trim() : "";</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if (!textoNormalizado) {</span>
+<span class="cstat-no" title="statement not covered" >            return res.status(400).json({ message: "Texto do comentário é obrigatório" });</span>
+        }
+&nbsp;
+        // Permite comentar sem login (ou sem informar nome)
+        const autorFinal = <span class="cstat-no" title="statement not covered" >autorNormalizado || "Anônimo";</span>
         const post = <span class="cstat-no" title="statement not covered" >await Posts.findById(postId);</span>
 <span class="cstat-no" title="statement not covered" >        if (!post) <span class="cstat-no" title="statement not covered" >return res.status(404).json({ message: "Post não encontrado" });</span></span>
-        const comentario = <span class="cstat-no" title="statement not covered" >new Comentario({ post: postId, autor, texto });</span>
+        const comentario = <span class="cstat-no" title="statement not covered" >new Comentario({ post: postId, autor: autorFinal, texto: textoNormalizado });</span>
 <span class="cstat-no" title="statement not covered" >        await comentario.save();</span>
 <span class="cstat-no" title="statement not covered" >        res.status(201).json(comentario);</span>
     } catch (err) {
@@ -214,7 +241,7 @@ export default comentariosRoutes;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-08T23:35:46.866Z
+                at 2026-02-08T06:41:34.937Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

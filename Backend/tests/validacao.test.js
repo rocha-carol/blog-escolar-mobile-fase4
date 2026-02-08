@@ -58,9 +58,26 @@ describe("ValidacaoController", () => {
             });
         });
 
-        it("deve retornar erro 400 se ocorrer falha ao cadastrar", async () => {
+        it("deve retornar erro 400 se dados obrigatórios não forem enviados", async () => {
             req.body = { nome: "Teste" };
+
+            await ValidacaoController.cadastrarUsuario(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "nome, email, senha e role são obrigatórios"
+            });
+        });
+
+        it("deve retornar erro 400 se ocorrer falha ao cadastrar", async () => {
+            req.body = {
+                nome: "Teste",
+                email: "teste@example.com",
+                senha: "123456",
+                role: "aluno"
+            };
             const erro = new Error("Erro no cadastro");
+            bcrypt.hash.mockResolvedValue("senha-hash");
             Usuario.create.mockRejectedValue(erro);
 
             await ValidacaoController.cadastrarUsuario(req, res);
@@ -139,11 +156,107 @@ describe("ValidacaoController", () => {
             });
         });
 
+        it("deve criar a senha no primeiro acesso e retornar 200", async () => {
+            req.body = { email: "primeiro@acesso.com", senha: "minhaNovaSenha" };
+            const usuarioPrimeiroAcesso = {
+                _id: "first123",
+                nome: "Professor Novo",
+                email: "primeiro@acesso.com",
+                role: "professor",
+                primeiroAcesso: true,
+                senha: undefined,
+                save: jest.fn().mockResolvedValue(true)
+            };
+
+            Usuario.findOne.mockResolvedValue(usuarioPrimeiroAcesso);
+            bcrypt.hash.mockResolvedValue("senha-hash");
+
+            await ValidacaoController.login(req, res);
+
+            expect(bcrypt.hash).toHaveBeenCalledWith("minhaNovaSenha", 10);
+            expect(usuarioPrimeiroAcesso.save).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Senha criada no primeiro acesso. Login realizado",
+                firstAccess: true,
+                usuario: {
+                    id: "first123",
+                    nome: "Professor Novo",
+                    email: "primeiro@acesso.com",
+                    role: "professor"
+                }
+            });
+        });
+
         it("deve retornar erro 500 em caso de exceção inesperada", async () => {
             req.body = { email: "carol@example.com", senha: "123456" };
             Usuario.findOne.mockRejectedValue(new Error("Erro inesperado"));
 
             await ValidacaoController.login(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ message: "Erro inesperado" });
+        });
+    });
+
+    // TESTE: Login de aluno (RM + Nome)
+    describe("loginAluno", () => {
+        it("deve retornar erro 400 se nome ou rm não forem enviados", async () => {
+            req.body = { nome: "" };
+
+            await ValidacaoController.loginAluno(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ message: "Nome e RM são obrigatórios" });
+        });
+
+        it("deve retornar 401 se o aluno não for encontrado", async () => {
+            req.body = { nome: "Aluno Teste", rm: "123" };
+            Usuario.findOne.mockResolvedValue(null);
+
+            await ValidacaoController.loginAluno(req, res);
+
+            expect(Usuario.findOne).toHaveBeenCalledWith({ rm: "123" });
+            expect(res.status).toHaveBeenCalledWith(401);
+            expect(res.json).toHaveBeenCalledWith({ message: "Aluno não encontrado" });
+        });
+
+        it("deve retornar 401 se o nome não corresponder ao RM cadastrado", async () => {
+            req.body = { nome: "Nome Errado", rm: "123" };
+            const alunoFake = { _id: "a1", nome: "Aluno Correto", rm: "123", role: "aluno" };
+            Usuario.findOne.mockResolvedValue(alunoFake);
+
+            await ValidacaoController.loginAluno(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(401);
+            expect(res.json).toHaveBeenCalledWith({ message: "Nome ou RM inválidos" });
+        });
+
+        it("deve retornar 200 se o login de aluno for bem-sucedido", async () => {
+            req.body = { nome: "Joao da Silva", rm: "123" };
+            const alunoFake = { _id: "a1", nome: "João  da   Silva", rm: "123", role: "aluno" };
+            Usuario.findOne.mockResolvedValue(alunoFake);
+
+            await ValidacaoController.loginAluno(req, res);
+
+            expect(Usuario.findOne).toHaveBeenCalledWith({ rm: "123" });
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "Login de aluno realizado",
+                usuario: {
+                    id: "a1",
+                    nome: "João  da   Silva",
+                    rm: "123",
+                    role: "aluno"
+                }
+            });
+        });
+
+        it("deve retornar erro 500 em caso de exceção inesperada", async () => {
+            req.body = { nome: "Aluno Teste", rm: "123" };
+            Usuario.findOne.mockRejectedValue(new Error("Erro inesperado"));
+
+            await ValidacaoController.loginAluno(req, res);
 
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({ message: "Erro inesperado" });

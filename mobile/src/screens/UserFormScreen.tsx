@@ -1,20 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import AppButton from "../components/AppButton";
 import AppInput from "../components/AppInput";
 import colors from "../theme/colors";
-import { registerUser } from "../services/auth";
-import { fetchUser, updateUser } from "../services/users";
-import type { UserRole } from "../types";
+import { createUser, fetchUser, updateUser } from "../services/users";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
   const { mode, role, userId } = route.params;
   const { user } = useAuth();
+  const toast = useToast();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [rm, setRm] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Flag setada após salvar para permitir navegação sem alerta.
+  const skipUnsavedPromptRef = useRef(false);
+
+  // Snapshot inicial do formulário para detectar alterações não salvas.
+  const initialRef = useRef<{ nome: string; email: string; rm: string; senha: string } | null>(null);
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
   useEffect(() => {
     if (user && user.role !== "professor") {
@@ -26,11 +35,61 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   useEffect(() => {
     if (mode === "edit" && userId) {
       fetchUser(userId).then((user) => {
-        setNome(user.nome);
-        setEmail(user.email);
+        const loadedNome = user.nome ?? "";
+        const loadedEmail = user.email ?? "";
+        const loadedRm = user.rm ?? "";
+
+        setNome(loadedNome);
+        setEmail(loadedEmail);
+        setRm(loadedRm);
+
+        initialRef.current = {
+          nome: loadedNome,
+          email: loadedEmail,
+          rm: loadedRm,
+          senha: "",
+        };
+        setInitialLoaded(true);
       });
+    } else {
+      initialRef.current = null;
+      setInitialLoaded(false);
     }
   }, [mode, userId]);
+
+  const isDirty = useMemo(() => {
+    if (mode !== "edit") return false;
+    if (role !== "aluno") return false;
+    if (!initialLoaded) return false;
+
+    const initial = initialRef.current;
+    if (!initial) return false;
+
+    const nomeNow = nome.trim();
+    const emailNow = email.trim();
+    const rmNow = rm.trim();
+
+    const nomeInitial = initial.nome.trim();
+    const emailInitial = initial.email.trim();
+    const rmInitial = initial.rm.trim();
+
+    const senhaNow = senha;
+    const senhaInitial = initial.senha;
+
+    return (
+      nomeNow !== nomeInitial ||
+      emailNow !== emailInitial ||
+      rmNow !== rmInitial ||
+      senhaNow !== senhaInitial
+    );
+  }, [email, initialLoaded, mode, nome, rm, role, senha]);
+
+  useUnsavedChangesGuard({
+    navigation,
+    enabled: mode === "edit" && role === "aluno",
+    hasUnsavedChanges: isDirty,
+    allowExitWithoutPromptRef: skipUnsavedPromptRef,
+  });
 
   if (!user || user.role !== "professor") {
     return (
@@ -45,12 +104,37 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     setLoading(true);
     try {
       if (mode === "edit" && userId) {
-        await updateUser(userId, { nome, email, role, senha: senha || undefined });
-        Alert.alert("Sucesso", "Usuário atualizado com sucesso.");
+        if (role === "aluno") {
+          if (!rm.trim()) {
+            Alert.alert("Atenção", "Informe o RM do aluno.");
+            return;
+          }
+          await updateUser(userId, { nome, role, rm: rm.trim() });
+        } else {
+          await updateUser(userId, { nome, email, role, senha: senha || undefined });
+        }
+        toast.show("Usuário atualizado com sucesso.", { variant: "success" });
       } else {
-        await registerUser({ nome, email, senha, role: role as UserRole });
-        Alert.alert("Sucesso", "Usuário cadastrado com sucesso.");
+        if (role === "professor") {
+          const emailTrim = email.trim();
+          if (!emailTrim) {
+            Alert.alert("Atenção", "Informe o email do professor.");
+            return;
+          }
+          await createUser({ nome, email: emailTrim, role: "professor" });
+          toast.show("Professor cadastrado com sucesso.", { variant: "success" });
+        } else {
+          const rmTrim = rm.trim();
+          if (!rmTrim) {
+            Alert.alert("Atenção", "Informe o RM do aluno.");
+            return;
+          }
+          await createUser({ nome, rm: rmTrim, role: "aluno" });
+          toast.show("Aluno cadastrado com sucesso.", { variant: "success" });
+        }
       }
+
+      skipUnsavedPromptRef.current = true;
       navigation.goBack();
     } catch (error) {
       Alert.alert("Erro", "Não foi possível salvar o usuário.");
@@ -68,25 +152,42 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
       </Text>
       <View style={styles.card}>
         <AppInput label="Nome" value={nome} onChangeText={setNome} placeholder="Nome completo" />
-        <AppInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="usuario@email.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="emailAddress"
-        />
-        <AppInput
-          label={mode === "edit" ? "Nova senha (opcional)" : "Senha"}
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="password"
-        />
+        {role === "professor" ? (
+          <>
+            <AppInput
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="professor@email.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="emailAddress"
+            />
+            {mode === "edit" ? (
+              <AppInput
+                label="Nova senha (opcional)"
+                value={senha}
+                onChangeText={setSenha}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="password"
+              />
+            ) : null}
+          </>
+        ) : (
+          <AppInput
+            label="RM"
+            value={rm}
+            onChangeText={setRm}
+            placeholder="RM do aluno"
+            keyboardType="numeric"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="none"
+          />
+        )}
         <AppButton title={loading ? "Salvando..." : "Salvar"} onPress={handleSubmit} disabled={loading} />
       </View>
     </ScrollView>

@@ -1,25 +1,79 @@
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import AppButton from "../components/AppButton";
 import AppInput from "../components/AppInput";
 import colors from "../theme/colors";
 import { fetchPost } from "../services/posts";
+import { createComment, fetchComments } from "../services/comments";
 import type { Post } from "../types";
-
-type Comment = {
-  id: string;
-  author: string;
-  message: string;
-  createdAt: string;
-};
 
 const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
   const { postId } = route.params;
+  const scrollToComments = Boolean(route?.params?.scrollToComments);
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [comments, setComments] = useState<Array<{ id: string; author: string; message: string; createdAt: string }>>(
+    []
+  );
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentMessage, setCommentMessage] = useState("");
+  const [didAutoScroll, setDidAutoScroll] = useState(false);
+  const [commentsLayoutY, setCommentsLayoutY] = useState<number | null>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
+
+  // Evita que tokens muito longos (ex.: URLs) estourem a linha e pareçam "cortados".
+  const softWrapLongTokens = (text: string, maxTokenLen = 28, chunkSize = 18) => {
+    const withSpaces = text.split(/(\s+)/);
+    return withSpaces
+      .map((part) => {
+        if (!part || /^\s+$/.test(part)) return part;
+        if (part.length <= maxTokenLen) return part;
+        return part.replace(new RegExp(`(.{${chunkSize}})`, "g"), "$1\u200B");
+      })
+      .join("");
+  };
+
+  const getNomeAutor = (item: Post) => {
+    if (item.autoria?.trim()) return item.autoria;
+    return "Autor desconhecido";
+  };
+
+  const formatDateBR = (value?: string) => {
+    if (!value) return "--";
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleDateString("pt-BR");
+  };
+
+  const datasInfo = useMemo(() => {
+    if (!post) return null;
+    const criado = post.CriadoEm;
+    const atualizado = post.AtualizadoEm;
+    const foiAtualizado = Boolean(atualizado) && atualizado !== criado;
+    return {
+      criado: formatDateBR(criado),
+      atualizado: formatDateBR(atualizado),
+      foiAtualizado,
+    };
+  }, [post]);
+
+  const conteudoFormatado = useMemo(() => {
+    if (!post?.conteudo) return "";
+    return softWrapLongTokens(post.conteudo);
+  }, [post?.conteudo]);
+
+  const paragrafos = useMemo(() => {
+    // Mantém quebras de linha e evita um Text gigante (ajuda em alguns casos de clipping no Android)
+    const raw = conteudoFormatado;
+    if (!raw) return [] as string[];
+    return raw
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+  }, [conteudoFormatado]);
 
   useEffect(() => {
     const load = async () => {
@@ -33,16 +87,48 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     load();
   }, [postId]);
 
-  const handleAddComment = () => {
-    if (!commentMessage.trim()) return;
-    const newComment: Comment = {
-      id: `${Date.now()}`,
-      author: commentAuthor.trim() || "Anônimo",
-      message: commentMessage.trim(),
-      createdAt: new Date().toLocaleString("pt-BR"),
-    };
-    setComments((prev) => [newComment, ...prev]);
-    setCommentMessage("");
+  const loadComments = async () => {
+    setLoadingComments(true);
+    try {
+      const list = await fetchComments(postId);
+      setComments(list.map((c) => ({ id: c.id, author: c.author, message: c.message, createdAt: c.createdAt })));
+    } catch (e) {
+      // Comentários são "extra"; não bloqueia a leitura do post
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  useEffect(() => {
+    loadComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId]);
+
+  useEffect(() => {
+    if (!scrollToComments) return;
+    if (didAutoScroll) return;
+    if (commentsLayoutY === null) return;
+
+    const y = Math.max(0, commentsLayoutY - 8);
+    const t = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y, animated: true });
+      setDidAutoScroll(true);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [commentsLayoutY, didAutoScroll, scrollToComments]);
+
+  const handleAddComment = async () => {
+    const texto = commentMessage.trim();
+    const autor = commentAuthor.trim();
+    if (!texto) return;
+
+    try {
+      await createComment(postId, { autor: autor || undefined, texto });
+      setCommentMessage("");
+      await loadComments();
+    } catch (e) {
+      Alert.alert("Erro", "Não foi possível enviar seu comentário. Tente novamente.");
+    }
   };
 
   if (loading) {
@@ -62,24 +148,87 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text style={styles.title}>{post.titulo}</Text>
-      <Text style={styles.meta}>Autor: {post.autoria || "Não informado"}</Text>
-      <Text style={styles.meta}>Área: {post.areaDoConhecimento || "Geral"}</Text>
-      <Text style={styles.content}>{post.conteudo}</Text>
+    <ScrollView ref={scrollRef} style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+      <View style={styles.heroSection}>
+        <View style={styles.postContainer}>
+          <View style={styles.postHeader}>
+            <Text style={styles.title}>{post.titulo}</Text>
+          </View>
 
-      <View style={styles.commentsSection}>
+          <View style={styles.postMedia}>
+            <View style={styles.postImageWrapper}>
+              {post.imagem ? (
+                <Image source={{ uri: post.imagem }} style={styles.postImage} resizeMode="cover" />
+              ) : (
+                <View style={styles.postPlaceholder} />
+              )}
+            </View>
+          </View>
+
+          <View style={styles.postMeta}>
+            <View style={styles.cardRow}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{post.areaDoConhecimento || "Artigos"}</Text>
+              </View>
+              {datasInfo && (
+                <Text style={styles.cardMetaInline}>
+                  {datasInfo.foiAtualizado ? "Atualizado em" : "Publicado em"}{" "}
+                  {datasInfo.foiAtualizado ? datasInfo.atualizado : datasInfo.criado}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.postContent}>
+            <View style={styles.contentWrap}>
+              {paragrafos.length > 0 ? (
+                paragrafos.map((p, idx) => (
+                  <Text key={`${idx}-${p.slice(0, 12)}`} style={styles.paragraph} selectable>
+                    {p}
+                  </Text>
+                ))
+              ) : (
+                <Text style={styles.paragraph} selectable>
+                  {conteudoFormatado}
+                </Text>
+              )}
+            </View>
+
+            <Text style={styles.cardAuthor}>Publicado por: {getNomeAutor(post)}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={styles.commentsSection}
+        onLayout={(e) => {
+          setCommentsLayoutY(e.nativeEvent.layout.y);
+        }}
+      >
         <Text style={styles.sectionTitle}>Comentários</Text>
-        <AppInput label="Nome" value={commentAuthor} onChangeText={setCommentAuthor} placeholder="Seu nome" />
+
         <AppInput
-          label="Mensagem"
+          value={commentAuthor}
+          onChangeText={setCommentAuthor}
+          placeholder="Seu nome (opcional)"
+          variant="soft"
+          density="compact"
+          containerStyle={{ marginBottom: 10 }}
+        />
+        <AppInput
           value={commentMessage}
           onChangeText={setCommentMessage}
           placeholder="Digite seu comentário"
           multiline
+          variant="soft"
+          density="compact"
+          containerStyle={{ marginBottom: 10 }}
         />
-        <AppButton title="Enviar comentário" onPress={handleAddComment} />
-        {comments.length === 0 ? (
+        <AppButton title={loadingComments ? "Carregando..." : "Enviar comentário"} onPress={handleAddComment} />
+
+        {loadingComments && <Text style={styles.emptyText}>Carregando comentários...</Text>}
+
+        {!loadingComments && comments.length === 0 ? (
           <Text style={styles.emptyText}>Ainda não há comentários.</Text>
         ) : (
           comments.map((comment) => (
@@ -98,44 +247,147 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: colors.background,
   },
-  title: {
-    fontSize: 26,
+  heroSection: {
+    paddingTop: 12,
+    paddingBottom: 10,
+  },
+  postContainer: {
+    backgroundColor: "transparent",
+    borderRadius: 0,
+    marginHorizontal: 0,
+    borderWidth: 0,
+  },
+  postHeader: {
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 8,
+  },
+  postMedia: {
+    width: "100%",
+    paddingHorizontal: 24,
+    paddingTop: 0,
+    paddingBottom: 12,
+  },
+  postMeta: {
+    paddingHorizontal: 24,
+    paddingBottom: 6,
+  },
+  postImageWrapper: {
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  postImage: {
+    width: "100%",
+    height: 220,
+    borderRadius: 14,
+  },
+  postPlaceholder: {
+    width: "100%",
+    height: 220,
+    borderRadius: 14,
+    backgroundColor: colors.background,
+  },
+  postContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+    width: "100%",
+  },
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    marginBottom: 6,
+  },
+  badge: {
+    backgroundColor: colors.secondary,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    maxWidth: "60%",
+    flexShrink: 1,
+  },
+  badgeText: {
+    color: colors.white,
+    fontSize: 12,
+    lineHeight: 15,
     fontWeight: "700",
-    marginBottom: 12,
-    color: colors.text,
   },
-  meta: {
+  cardMetaInline: {
     color: colors.muted,
-    marginBottom: 4,
+    fontSize: 13,
+    fontStyle: "italic",
+    fontWeight: "600",
+    flexShrink: 1,
+    flexGrow: 1,
+    marginLeft: 8,
+    textAlign: "right",
+    alignSelf: "center",
   },
-  content: {
-    marginTop: 16,
-    fontSize: 16,
-    lineHeight: 22,
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 14,
     color: colors.text,
+    textAlign: "left",
   },
-  commentsSection: {
-    marginTop: 32,
+  cardAuthor: {
+    color: colors.muted,
+    fontSize: 13,
+    fontStyle: "italic",
+    textAlign: "right",
+    alignSelf: "flex-end",
+    marginTop: 12,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    marginBottom: 12,
     color: colors.text,
+    marginBottom: 8,
+  },
+  contentWrap: {
+    marginTop: 10,
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  paragraph: {
+    fontSize: 16,
+    // Mais folga para evitar clipping de letras em alguns Androids (ascendentes/descendentes)
+    lineHeight: 30,
+    paddingVertical: 1,
+    // Evita que o último caractere encoste na borda e seja "clipado" por arredondamento de pixels
+    paddingRight: 2,
+    color: colors.text,
+    // Android (Expo Go/emulador): justify pode gerar clipping visual em alguns trechos.
+    textAlign: Platform.OS === "android" ? "left" : "justify",
+    width: "100%",
+    alignSelf: "stretch",
+    flexShrink: 1,
+    includeFontPadding: true,
+    textAlignVertical: "top",
+    ...(Platform.OS === "android"
+      ? {
+          // Android-only
+          textBreakStrategy: "highQuality" as const,
+          fontFamily: "sans-serif",
+        }
+      : null),
+  },
+  commentsSection: {
+    paddingHorizontal: 24,
+    paddingTop: 14,
   },
   emptyText: {
     color: colors.muted,
     marginTop: 12,
   },
   commentCard: {
-    marginTop: 16,
+    marginTop: 12,
     padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 0,
+    borderWidth: 0,
     backgroundColor: colors.white,
   },
   commentAuthor: {

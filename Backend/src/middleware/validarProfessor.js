@@ -4,8 +4,8 @@ import bcrypt from "bcryptjs";
 // Middleware para validar professor via email e senha
 async function validarProfessor(req, res, next) {
   try {
-    const email = req.body.email || req.headers["x-email"] || req.query.email;
-    const senha = req.body.senha || req.headers["x-senha"] || req.query.senha;
+    const email = req.headers["x-email"] || req.query.email || req.body.email;
+    const senha = req.headers["x-senha"] || req.query.senha || req.body.senha;
 
     if (!email || !senha) {
       return res.status(401).json({ message: "Usuário não cadastrado ou senha incorreta" });
@@ -14,6 +14,10 @@ async function validarProfessor(req, res, next) {
     const usuario = await Usuario.findOne({ email });
     if (!usuario) {
       return res.status(400).json({ message: "Usuário não encontrado" });
+    }
+
+    if (usuario.primeiroAcesso || !usuario.senha) {
+      return res.status(401).json({ message: "Professor precisa definir senha no primeiro acesso" });
     }
 
     const senhaCorreta = await bcrypt.compare(senha, usuario.senha);

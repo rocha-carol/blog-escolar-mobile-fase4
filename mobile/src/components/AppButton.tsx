@@ -7,21 +7,23 @@ type Props = {
   onPress: () => void;
   variant?: "primary" | "secondary" | "danger";
   disabled?: boolean;
+  size?: "sm" | "md";
 };
 
-const AppButton: React.FC<Props> = ({ title, onPress, variant = "primary", disabled }) => {
+const AppButton: React.FC<Props> = ({ title, onPress, variant = "primary", disabled, size = "md" }) => {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
         styles.base,
+        size === "sm" && styles.baseSm,
         styles[variant],
         disabled && styles.disabled,
         pressed && !disabled && styles.pressed,
       ]}
     >
-      <Text style={styles.text}>{title}</Text>
+      <Text style={[styles.text, size === "sm" && styles.textSm]}>{title}</Text>
     </Pressable>
   );
 };
@@ -32,6 +34,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 10,
     alignItems: "center",
+  },
+  baseSm: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
   },
   primary: {
     backgroundColor: colors.primary,
@@ -46,6 +53,9 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "600",
     fontSize: 16,
+  },
+  textSm: {
+    fontSize: 13,
   },
   pressed: {
     opacity: 0.85,

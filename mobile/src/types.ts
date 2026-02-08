@@ -3,8 +3,11 @@ export type UserRole = "professor" | "aluno";
 export type User = {
   id: string;
   nome: string;
-  email: string;
+  email?: string;
+  rm?: string;
   role: UserRole;
+  primeiroAcesso?: boolean;
+  podeGerenciarUsuarios?: boolean;
 };
 
 export type Post = {
@@ -16,6 +19,9 @@ export type Post = {
   imagem?: string;
   CriadoEm?: string;
   AtualizadoEm?: string;
+  CriadoEmHora?: string;
+  AtualizadoEmHora?: string;
+  comentariosCount?: number;
 };
 
 export type PaginatedResponse<T> = {

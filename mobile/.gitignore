@@ -1,0 +1,22 @@
+# Logs
+logs
+*.log
+
+# Dependências
+node_modules
+
+# Build
+web-build
+
+# Expo
+.expo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.exemplo
+!.env.example
