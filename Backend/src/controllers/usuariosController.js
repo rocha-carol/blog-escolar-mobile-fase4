@@ -54,7 +54,7 @@ class UsuariosController {
           id: novoUsuario._id,
           nome: novoUsuario.nome,
           email: novoUsuario.email,
-            rm: novoUsuario.rm,
+          rm: novoUsuario.rm,
           role: novoUsuario.role,
           primeiroAcesso: novoUsuario.primeiroAcesso,
         },

@@ -1,6 +1,17 @@
 # Blog Escolar Mobile
 
-Aplicativo mobile em React Native (Expo) para consumo da API de blog escolar.
+## Sumário
+
+1. [Blog Escolar Mobile](#blog-escolar-mobile) — linha 1
+2. [Documentação técnica detalhada](#documentação-técnica-detalhada) — linha 6
+   - [Setup inicial](#setup-inicial) — linha 8
+   - [Arquitetura da aplicação](#arquitetura-da-aplicação) — linha 34
+   - [Guia de uso](#guia-de-uso) — linha 74
+   - [Funcionalidades implementadas](#funcionalidades-implementadas) — linha 109
+   - [Observações](#observações) — linha 117
+3. [Arquitetura do sistema](#arquitetura-do-sistema) — linha 120
+4. [Uso da aplicação](#uso-da-aplicação) — linha 134
+5. [Experiências e desafios](#experiências-e-desafios) — linha 143
 
 ## Documentação técnica detalhada
 
