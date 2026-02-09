@@ -1,4 +1,4 @@
-import api from "./api";
+import api, { assertProfessorPermission } from "./api";
 import type { PaginatedResponse, User, UserRole } from "../types";
 
 export async function createUser(payload:
@@ -13,6 +13,7 @@ export async function createUser(payload:
       rm: string;
     }
 ): Promise<User> {
+  await assertProfessorPermission();
   const response = await api.post(`/usuarios`, payload);
   return response.data.usuario;
 }
@@ -23,6 +24,8 @@ export async function fetchUsers(params: {
   page?: number;
   limit?: number;
 }): Promise<PaginatedResponse<User>> {
+  await assertProfessorPermission();
+
   const searchParams = new URLSearchParams();
   searchParams.set("role", params.role);
   if (params.termo?.trim()) searchParams.set("termo", params.termo.trim());
@@ -42,6 +45,7 @@ export async function fetchUsers(params: {
 }
 
 export async function fetchUser(id: string): Promise<User> {
+  await assertProfessorPermission();
   const response = await api.get(`/usuarios/${id}`);
   return response.data.usuario;
 }
@@ -53,10 +57,12 @@ export async function updateUser(id: string, payload: {
   rm?: string;
   senha?: string;
 }): Promise<User> {
+  await assertProfessorPermission();
   const response = await api.put(`/usuarios/${id}`, payload);
   return response.data.usuario;
 }
 
 export async function deleteUser(id: string): Promise<void> {
+  await assertProfessorPermission();
   await api.delete(`/usuarios/${id}`);
 }

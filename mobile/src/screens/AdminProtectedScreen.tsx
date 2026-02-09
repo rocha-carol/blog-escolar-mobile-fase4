@@ -13,14 +13,19 @@ const AdminProtectedScreen: React.FC<any> = (props) => {
     // Redirecionamento defensivo quando não existe sessão autenticada.
     if (!user) {
       navigation.navigate("Posts");
+      return;
+    }
+
+    if (user.role !== "professor") {
+      navigation.navigate("Posts");
     }
   }, [navigation, user]);
 
-  if (!user) {
+  if (!user || user.role !== "professor") {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Login necessário</Text>
-        <Text style={styles.text}>Faça login para acessar o gerenciamento de posts.</Text>
+        <Text style={styles.title}>Acesso restrito</Text>
+        <Text style={styles.text}>Apenas professores podem acessar o gerenciamento de posts.</Text>
       </View>
     );
   }

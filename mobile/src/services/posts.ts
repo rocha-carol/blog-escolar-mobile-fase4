@@ -1,4 +1,4 @@
-import api from "./api";
+import api, { assertProfessorPermission } from "./api";
 import type { Post, PaginatedResponse } from "../types";
 
 export type UploadFile = {
@@ -79,6 +79,8 @@ export async function createPost(payload: {
   areaDoConhecimento?: string;
   imagem?: UploadFile | null;
 }): Promise<Post> {
+  await assertProfessorPermission();
+
   const form = new FormData();
   form.append("titulo", payload.titulo);
   form.append("conteudo", payload.conteudo);
@@ -101,6 +103,8 @@ export async function updatePost(id: string, payload: {
   areaDoConhecimento?: string;
   imagem?: UploadFile | null;
 }): Promise<Post> {
+  await assertProfessorPermission();
+
   const form = new FormData();
   form.append("titulo", payload.titulo);
   form.append("conteudo", payload.conteudo);
@@ -117,5 +121,6 @@ export async function updatePost(id: string, payload: {
 }
 
 export async function deletePost(id: string): Promise<void> {
+  await assertProfessorPermission();
   await api.delete(`/posts/${id}`);
 }
