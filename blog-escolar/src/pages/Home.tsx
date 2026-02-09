@@ -225,7 +225,12 @@ export const Home: React.FC = () => {
       {/* Nome do usuário e botão de login/logout agora estão na barra de acessibilidade */}
       <h1 className="titulo-principal" style={{ color: '#7c4dbe', textAlign: 'center', width: '100%' }}>Entre linhas e ideias</h1>
       {user?.role === "professor" && (
-        <div style={{ width: "100%", display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ width: "100%", display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 16, gap: 10, flexWrap: "wrap" }}>
+          <Link to="/professores">
+            <button style={{ padding: "8px 20px", borderRadius: 8, background: "#7c4dbe", color: "#fff", border: "none", cursor: "pointer", fontWeight: 600 }}>
+              Listagem de professores
+            </button>
+          </Link>
           <Link to="/gerenciamentodepostagens">
             <button style={{ padding: "8px 20px", borderRadius: 8, background: "#4dbec7", color: "#fff", border: "none", cursor: "pointer", fontWeight: 600 }}>
               Gerenciamento de postagens
