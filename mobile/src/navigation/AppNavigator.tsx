@@ -13,7 +13,9 @@ import PostFormScreen from "../screens/PostFormScreen";
 import AdminProtectedScreen from "../screens/AdminProtectedScreen";
 import UserManagementProtectedScreen from "../screens/UserManagementProtectedScreen";
 import UserFormScreen from "../screens/UserFormScreen";
+import CreateProfessorScreen from "../screens/CreateProfessorScreen";
 import StudentScreen from "../screens/StudentScreen";
+import StudentManagementProtectedScreen from "../screens/StudentManagementProtectedScreen";
 import colors from "../theme/colors";
 
 const Stack = createNativeStackNavigator();
@@ -39,6 +41,7 @@ const MainTabs = () => {
             case "Professores":
               return <Ionicons name="school-outline" size={size} color={color} />;
             case "Alunos":
+            case "AlunosAdmin":
               return <Ionicons name="people-outline" size={size} color={color} />;
             default:
               return <Ionicons name="apps-outline" size={size} color={color} />;
@@ -57,7 +60,12 @@ const MainTabs = () => {
           <Tab.Screen
             name="Professores"
             component={UserManagementProtectedScreen}
-            options={{ title: "Gerenciar usuários", unmountOnBlur: true }}
+            options={{ title: "Professores", unmountOnBlur: true }}
+          />
+          <Tab.Screen
+            name="AlunosAdmin"
+            component={StudentManagementProtectedScreen}
+            options={{ title: "Alunos", unmountOnBlur: true }}
           />
         </>
       )}
@@ -120,6 +128,11 @@ const AppNavigator = () => {
               <>
                 <Stack.Screen name="PostForm" component={PostFormScreen} options={{ title: "Blog Escolar" }} />
                 <Stack.Screen name="UserForm" component={UserFormScreen} options={{ title: "Blog Escolar" }} />
+                <Stack.Screen
+                  name="CreateProfessor"
+                  component={CreateProfessorScreen}
+                  options={{ title: "Blog Escolar" }}
+                />
               </>
             )}
           </>

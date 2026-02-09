@@ -122,7 +122,11 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
       <View style={styles.addButton}>
         <AppButton
           title={role === "professor" ? "Cadastrar professor" : "Cadastrar aluno"}
-          onPress={() => navigation.navigate("UserForm", { mode: "create", role })}
+          onPress={() =>
+            role === "professor"
+              ? navigation.navigate("CreateProfessor")
+              : navigation.navigate("UserForm", { mode: "create", role })
+          }
         />
       </View>
       <FlatList

@@ -150,6 +150,9 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
           ? `Editar ${role === "professor" ? "professor" : "aluno"}`
           : `Novo ${role === "professor" ? "professor" : "aluno"}`}
       </Text>
+      {mode === "edit" && role === "professor" ? (
+        <Text style={styles.subtitle}>Página de edição de professores</Text>
+      ) : null}
       <View style={styles.card}>
         <AppInput label="Nome" value={nome} onChangeText={setNome} placeholder="Nome completo" />
         {role === "professor" ? (
@@ -188,7 +191,11 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
             textContentType="none"
           />
         )}
-        <AppButton title={loading ? "Salvando..." : "Salvar"} onPress={handleSubmit} disabled={loading} />
+        <AppButton
+          title={loading ? "Salvando..." : mode === "edit" && role === "professor" ? "Salvar alterações" : "Salvar"}
+          onPress={handleSubmit}
+          disabled={loading}
+        />
       </View>
     </ScrollView>
   );
@@ -205,6 +212,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 16,
     color: colors.text,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: colors.muted,
+    marginBottom: 12,
+    fontWeight: "600",
   },
   card: {
     backgroundColor: colors.white,
