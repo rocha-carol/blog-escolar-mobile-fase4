@@ -7,7 +7,7 @@ type AuthContextData = {
   user: User | null;
   credentials: { email: string; senha: string } | null;
   loading: boolean;
-  login: (email: string, senha: string) => Promise<{ firstAccess?: boolean }>;
+  login: (email: string, senha: string) => Promise<{ user: User; firstAccess?: boolean }>;
   continueAsStudent: (nome: string, rm: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -23,12 +23,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const bootstrap = async () => {
       const storedUser = await AsyncStorage.getItem("auth_user");
       const storedCredentials = await AsyncStorage.getItem("auth_credentials");
+
+      let canRestoreCredentials = false;
+
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser) as User;
+        if (parsedUser.role === "professor") {
+          setUser(parsedUser);
+          canRestoreCredentials = true;
+        } else {
+          await AsyncStorage.multiRemove(["auth_user", "auth_credentials"]);
+        }
       }
-      if (storedCredentials) {
+
+      if (storedCredentials && canRestoreCredentials) {
         setCredentials(JSON.parse(storedCredentials));
       }
+
       setLoading(false);
     };
     bootstrap();
@@ -40,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCredentials({ email, senha });
     await AsyncStorage.setItem("auth_user", JSON.stringify(loggedUser));
     await AsyncStorage.setItem("auth_credentials", JSON.stringify({ email, senha }));
-    return { firstAccess };
+    return { user: loggedUser, firstAccess };
   }, []);
 
   const continueAsStudent = useCallback(async (nome: string, rm: string) => {
