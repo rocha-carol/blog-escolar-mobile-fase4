@@ -74,8 +74,7 @@ const AdminPostsScreen: React.FC = () => {
   const loadPosts = useCallback(async (opts?: { merge?: boolean }) => {
     setLoading(true);
     try {
-      const autor = user?.nome?.trim();
-      const response = await fetchPosts({ autor: autor || undefined, page: 1, limit: 50 });
+      const response = await fetchPosts({ page: 1, limit: 50 });
       const fetched = response.items ?? [];
       if (!opts?.merge) {
         setPosts(fetched);
@@ -212,6 +211,11 @@ const AdminPostsScreen: React.FC = () => {
               <Text style={styles.cardMeta} numberOfLines={1}>
                 {getInfoDataPublicacao(item).label} {getInfoDataPublicacao(item).data}
               </Text>
+              {item.autoria ? (
+                <Text style={styles.cardMeta} numberOfLines={1}>
+                  Autor: {item.autoria}
+                </Text>
+              ) : null}
             </View>
 
             <View style={styles.actions}>
@@ -231,7 +235,7 @@ const AdminPostsScreen: React.FC = () => {
           !loading ? (
             <Text style={styles.emptyText}>
               {posts.length === 0
-                ? "Você ainda não criou postagens."
+                ? "Nenhuma postagem cadastrada."
                 : "Nenhuma postagem encontrada para o termo informado."}
             </Text>
           ) : null
