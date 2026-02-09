@@ -5,7 +5,7 @@ import colors from "../theme/colors";
 import { useManagementAuth } from "../contexts/ManagementAuthContext";
 import UsersListScreen from "./UsersListScreen";
 
-const UserManagementProtectedScreen: React.FC = () => {
+const StudentManagementProtectedScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { isAuthorized, ensureAuthorized, resetAuthorization } = useManagementAuth();
 
@@ -43,7 +43,7 @@ const UserManagementProtectedScreen: React.FC = () => {
     );
   }
 
-  return <UsersListScreen role="professor" />;
+  return <UsersListScreen role="aluno" />;
 };
 
 const styles = StyleSheet.create({
@@ -66,4 +66,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UserManagementProtectedScreen;
+export default StudentManagementProtectedScreen;
