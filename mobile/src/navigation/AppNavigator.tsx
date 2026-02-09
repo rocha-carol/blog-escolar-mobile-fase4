@@ -61,8 +61,6 @@ const MainTabs = () => {
             name="Professores"
             component={ProfessoresListProtectedScreen}
             options={{ title: "Professores", unmountOnBlur: true }}
-            component={UserManagementProtectedScreen}
-            options={{ title: "Professores", unmountOnBlur: true }}
           />
           <Tab.Screen
             name="AlunosAdmin"
