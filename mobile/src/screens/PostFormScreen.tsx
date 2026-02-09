@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,6 +12,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
+// Áreas de conhecimento disponíveis
 const AREAS_CONHECIMENTO = [
   "Linguagens",
   "Matemática",
@@ -19,10 +21,13 @@ const AREAS_CONHECIMENTO = [
   "Tecnologias",
 ];
 
+// Componente principal para criar ou editar post
 const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
+  // Extrai modo, id do post e origem
   const { mode, postId, origin } = route.params || { mode: "create" };
   const { user } = useAuth();
   const toast = useToast();
+  // Estados para campos do formulário
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
   const [area, setArea] = useState("");
@@ -32,7 +37,7 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   const [loading, setLoading] = useState(false);
   const [areaPickerOpen, setAreaPickerOpen] = useState(false);
 
-  // Snapshot inicial do formulário para detectar alterações não salvas.
+  // Snapshot inicial do formulário para detectar alterações não salvas
   const initialSnapshotRef = useRef<{
     titulo: string;
     conteudo: string;
@@ -40,15 +45,17 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     imagemPreviewUri: string;
   } | null>(null);
 
-  // Flag setada após salvar para permitir navegação sem alerta.
+  // Flag para permitir navegação sem alerta após salvar
   const allowExitWithoutPromptRef = useRef(false);
 
+  // Preenche autoria com nome do usuário
   useEffect(() => {
     if (user?.nome) {
       setAutoria(user.nome);
     }
   }, [user?.nome]);
 
+  // Inicializa snapshot ao criar ou editar
   useEffect(() => {
     if (mode !== "edit") {
       initialSnapshotRef.current = {
@@ -60,6 +67,7 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     }
   }, [mode]);
 
+  // Busca dados do post ao editar
   useEffect(() => {
     if (user && user.role !== "professor") {
       Alert.alert("Acesso restrito", "Apenas professores podem criar ou editar postagens.");

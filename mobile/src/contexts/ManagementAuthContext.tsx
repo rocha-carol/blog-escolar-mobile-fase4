@@ -6,37 +6,51 @@ import colors from "../theme/colors";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./ToastContext";
 
+// Senha padrão para acesso ao gerenciamento
 const DEFAULT_MANAGEMENT_PASSWORD = "1234";
 
+// Define o formato da API do contexto
+// isAuthorized: indica se está autorizado
+// ensureAuthorized: função para garantir autorização
+// resetAuthorization: função para resetar autorização
 type ManagementAuthApi = {
   isAuthorized: boolean;
   ensureAuthorized: () => Promise<boolean>;
   resetAuthorization: () => void;
 };
 
+// Cria o contexto de autenticação de gerenciamento
 const ManagementAuthContext = createContext<ManagementAuthApi | null>(null);
 
+// Hook para acessar o contexto de autenticação de gerenciamento
 export const useManagementAuth = () => {
   const ctx = useContext(ManagementAuthContext);
   if (!ctx) throw new Error("useManagementAuth deve ser usado dentro de ManagementAuthProvider");
   return ctx;
 };
 
+// Provider do contexto de autenticação de gerenciamento
 export const ManagementAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Pega usuário logado
   const { user } = useAuth();
+  // Toast para mostrar mensagens
   const toast = useToast();
 
+  // Estado de autorização e visibilidade do modal
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [visible, setVisible] = useState(false);
   const [senha, setSenha] = useState("");
 
+  // Referência para resolver promessas pendentes
   const pendingResolveRef = useRef<((ok: boolean) => void) | null>(null);
 
+  // Função para resetar autorização
   const resetAuthorization = useCallback(() => {
     setIsAuthorized(false);
   }, []);
 
-  // Autorização local para abrir telas de gerenciamento; não substitui validações do backend.
+  // Efeito para resetar autorização ao trocar de usuário
+  // Também limpa modal e senha
   useEffect(() => {
     resetAuthorization();
     if (pendingResolveRef.current) {
@@ -47,6 +61,7 @@ export const ManagementAuthProvider: React.FC<{ children: React.ReactNode }> = (
     setSenha("");
   }, [user?.id, resetAuthorization]);
 
+  // Função para garantir autorização antes de acessar área restrita
   const ensureAuthorized = useCallback(async () => {
     if (isAuthorized) return true;
 
@@ -65,6 +80,7 @@ export const ManagementAuthProvider: React.FC<{ children: React.ReactNode }> = (
     });
   }, [isAuthorized, toast, user]);
 
+  // Finaliza o fluxo de autorização
   const finish = useCallback((ok: boolean) => {
     setVisible(false);
     const resolve = pendingResolveRef.current;
@@ -72,6 +88,7 @@ export const ManagementAuthProvider: React.FC<{ children: React.ReactNode }> = (
     resolve?.(ok);
   }, []);
 
+  // Confirma senha digitada
   const handleConfirm = useCallback(() => {
     const entered = senha.trim();
     if (entered === DEFAULT_MANAGEMENT_PASSWORD) {
@@ -83,10 +100,12 @@ export const ManagementAuthProvider: React.FC<{ children: React.ReactNode }> = (
     toast.show("Senha incorreta.", { variant: "error" });
   }, [finish, senha, toast]);
 
+  // Cancela o modal
   const handleCancel = useCallback(() => {
     finish(false);
   }, [finish]);
 
+  // Monta a API do contexto
   const api = useMemo(
     () => ({
       isAuthorized,
@@ -96,6 +115,7 @@ export const ManagementAuthProvider: React.FC<{ children: React.ReactNode }> = (
     [ensureAuthorized, isAuthorized, resetAuthorization]
   );
 
+  // Renderiza provider e modal de senha
   return (
     <ManagementAuthContext.Provider value={api}>
       {children}
@@ -133,6 +153,7 @@ export const ManagementAuthProvider: React.FC<{ children: React.ReactNode }> = (
   );
 };
 
+// Estilos do modal e botões
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,

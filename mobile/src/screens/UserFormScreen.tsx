@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import AppButton from "../components/AppButton";
@@ -8,23 +9,27 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
+// Componente principal para criar ou editar usuário
 const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
+  // Extrai modo, papel e id do usuário
   const { mode, role, userId } = route.params;
   const { user } = useAuth();
   const toast = useToast();
+  // Estados para campos do formulário
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [rm, setRm] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Flag setada após salvar para permitir navegação sem alerta.
+  // Flag para permitir navegação sem alerta após salvar
   const skipUnsavedPromptRef = useRef(false);
 
-  // Snapshot inicial do formulário para detectar alterações não salvas.
+  // Snapshot inicial do formulário para detectar alterações não salvas
   const initialRef = useRef<{ nome: string; email: string; rm: string; senha: string } | null>(null);
   const [initialLoaded, setInitialLoaded] = useState(false);
 
+  // Verifica permissão para gerenciar usuários
   useEffect(() => {
     if (user && user.role !== "professor") {
       Alert.alert("Acesso restrito", "Apenas professores podem gerenciar usuários.");
@@ -32,6 +37,7 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     }
   }, [navigation, user]);
 
+  // Busca dados do usuário ao editar
   useEffect(() => {
     if (mode === "edit" && userId) {
       fetchUser(userId).then((user) => {
@@ -57,6 +63,7 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     }
   }, [mode, userId]);
 
+  // Verifica se o formulário foi alterado
   const isDirty = useMemo(() => {
     if (mode !== "edit") return false;
     if (role !== "aluno") return false;
@@ -84,6 +91,7 @@ const UserFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     );
   }, [email, initialLoaded, mode, nome, rm, role, senha]);
 
+  // Guarda os dados não salvos
   useUnsavedChangesGuard({
     navigation,
     enabled: mode === "edit" && role === "aluno",

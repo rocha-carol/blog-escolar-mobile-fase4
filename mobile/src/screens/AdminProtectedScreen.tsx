@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -5,10 +6,13 @@ import AdminPostsScreen from "./AdminPostsScreen";
 import colors from "../theme/colors";
 import { useAuth } from "../contexts/AuthContext";
 
+// Componente para proteger área de administração
 const AdminProtectedScreen: React.FC<any> = (props) => {
+  // Navegação e autenticação
   const navigation = useNavigation<any>();
   const { user } = useAuth();
 
+  // Redireciona se não estiver autenticado
   useEffect(() => {
     // Redirecionamento defensivo quando não existe sessão autenticada.
     if (!user) {
@@ -16,6 +20,7 @@ const AdminProtectedScreen: React.FC<any> = (props) => {
     }
   }, [navigation, user]);
 
+  // Exibe mensagem se não estiver autenticado
   if (!user) {
     return (
       <View style={styles.container}>
@@ -25,9 +30,11 @@ const AdminProtectedScreen: React.FC<any> = (props) => {
     );
   }
 
+  // Renderiza tela de administração de posts
   return <AdminPostsScreen {...props} />;
 };
 
+// Estilos para cada parte da tela
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -48,4 +55,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Exporta o componente para ser usado em outras telas
 export default AdminProtectedScreen;
