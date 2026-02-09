@@ -15,7 +15,6 @@ import "../styles/center.css";
 const AREAS_CONHECIMENTO = [
   "Linguagens", "Matemática", "Ciências da Natureza", "Ciências Humanas", "Tecnologias"
 ];
-// ...existing code...st } from "../services/postService";
 
 export const Home: React.FC = () => {
   const { user } = useAuth();
@@ -76,8 +75,8 @@ export const Home: React.FC = () => {
   };
 
   const postsOrdenados = [...posts].sort((a: Post, b: Post) => {
-    const tsA = toTimestampBR(a.AtualizadoEm, (a as any).AtualizadoEmHora) || toTimestampBR(a.CriadoEm, (a as any).CriadoEmHora);
-    const tsB = toTimestampBR(b.AtualizadoEm, (b as any).AtualizadoEmHora) || toTimestampBR(b.CriadoEm, (b as any).CriadoEmHora);
+    const tsA = toTimestampBR(a.AtualizadoEm, a.AtualizadoEmHora) || toTimestampBR(a.CriadoEm, a.CriadoEmHora);
+    const tsB = toTimestampBR(b.AtualizadoEm, b.AtualizadoEmHora) || toTimestampBR(b.CriadoEm, b.CriadoEmHora);
     return tsB - tsA;
   });
 
