@@ -17,10 +17,10 @@ import AppInput from "../components/AppInput";
 import colors from "../theme/colors";
 import { useAuth } from "../contexts/AuthContext";
 
-type LoginRole = "professor" | "aluno";
+type LoginRole = "professor";
 
 const LoginScreen: React.FC = () => {
-  const { login, continueAsStudent, logout, user } = useAuth();
+  const { login, logout, user } = useAuth();
   const navigation = useNavigation<any>();
 
   const [selectedRole, setSelectedRole] = useState<LoginRole | null>(null);
@@ -33,8 +33,6 @@ const LoginScreen: React.FC = () => {
   const [firstAccessEmail, setFirstAccessEmail] = useState("");
   const [firstAccessSenha, setFirstAccessSenha] = useState("");
   const [firstAccessConfirm, setFirstAccessConfirm] = useState("");
-  const [studentNome, setStudentNome] = useState("");
-  const [studentRm, setStudentRm] = useState("");
 
   const handleLogin = async () => {
     const emailTrim = email.trim();
@@ -46,7 +44,13 @@ const LoginScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      await login(emailTrim, senha);
+      const { user: loggedUser } = await login(emailTrim, senha);
+      if (loggedUser.role !== "professor") {
+        await logout();
+        Alert.alert("Acesso restrito", "O aplicativo de gestão é exclusivo para professores.");
+        return;
+      }
+
       navigation.reset({ index: 0, routes: [{ name: "Main" }] });
     } catch (error) {
       Alert.alert("Erro", "Não foi possível entrar. Verifique suas credenciais.");
@@ -88,8 +92,14 @@ const LoginScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      const { firstAccess } = await login(emailTrim, senhaTrim);
+      const { user: loggedUser, firstAccess } = await login(emailTrim, senhaTrim);
       closeFirstAccessModal();
+
+      if (loggedUser.role !== "professor") {
+        await logout();
+        Alert.alert("Acesso restrito", "O aplicativo de gestão é exclusivo para professores.");
+        return;
+      }
 
       if (firstAccess) {
         Alert.alert("Sucesso", "Senha criada no primeiro acesso. Você já está logado.");
@@ -103,30 +113,6 @@ const LoginScreen: React.FC = () => {
     }
   }, [closeFirstAccessModal, firstAccessConfirm, firstAccessEmail, firstAccessSenha, login, navigation]);
 
-  const handleContinueAsStudent = useCallback(async () => {
-    const nomeTrim = studentNome.trim();
-    const rmTrim = studentRm.trim();
-
-    if (!nomeTrim) {
-      Alert.alert("Atenção", "Informe o nome completo do aluno.");
-      return;
-    }
-
-    if (!rmTrim) {
-      Alert.alert("Atenção", "Informe o RM do aluno.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await continueAsStudent(nomeTrim, rmTrim);
-      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
-    } catch (error) {
-      Alert.alert("Erro", "Aluno não encontrado. Verifique se o RM e o nome estão cadastrados.");
-    } finally {
-      setLoading(false);
-    }
-  }, [continueAsStudent, navigation, studentNome, studentRm]);
 
   const handleBackToRoleSelection = useCallback(() => {
     setSelectedRole(null);
@@ -169,7 +155,7 @@ const LoginScreen: React.FC = () => {
             <View>
               <View style={styles.header}>
                 <Text style={styles.title}>Blog Escolar</Text>
-                <Text style={styles.subtitle}>Escolha como deseja entrar</Text>
+                <Text style={styles.subtitle}>Acesso exclusivo para professores</Text>
               </View>
               <View style={styles.card}>
                 {selectedRole === null && (
@@ -202,13 +188,6 @@ const LoginScreen: React.FC = () => {
                       variant="primary"
                     />
 
-                    <View style={styles.spacer} />
-                    <AppButton
-                      title="Sou aluno"
-                      onPress={() => setSelectedRole("aluno")}
-                      disabled={loading}
-                      variant="secondary"
-                    />
                   </>
                 )}
 
@@ -253,39 +232,6 @@ const LoginScreen: React.FC = () => {
                   </>
                 )}
 
-                {selectedRole === "aluno" && (
-                  <>
-                    <Text style={styles.sectionTitle}>Aluno</Text>
-                    <Text style={styles.sectionSubtitle}>Entre com nome e RM.</Text>
-
-                    <AppInput
-                      label="Nome completo"
-                      value={studentNome}
-                      onChangeText={setStudentNome}
-                      placeholder="Seu nome completo"
-                      autoCapitalize="words"
-                      autoCorrect={false}
-                      textContentType="name"
-                    />
-
-                    <AppInput
-                      label="RM"
-                      value={studentRm}
-                      onChangeText={setStudentRm}
-                      placeholder="000000"
-                      keyboardType="numeric"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      textContentType="none"
-                    />
-
-                    <AppButton
-                      title={loading ? "Entrando..." : "Entrar"}
-                      onPress={handleContinueAsStudent}
-                      disabled={loading}
-                    />
-                  </>
-                )}
               </View>
             </View>
           </ScrollView>
