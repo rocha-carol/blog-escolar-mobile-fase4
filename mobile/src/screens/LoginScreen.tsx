@@ -17,16 +17,18 @@ import AppInput from "../components/AppInput";
 import colors from "../theme/colors";
 import { useAuth } from "../contexts/AuthContext";
 
-type LoginRole = "professor";
+type LoginRole = "professor" | "aluno";
 
 const LoginScreen: React.FC = () => {
-  const { login, logout, user } = useAuth();
+  const { login, continueAsStudent, logout, user } = useAuth();
   const navigation = useNavigation<any>();
 
   const [selectedRole, setSelectedRole] = useState<LoginRole | null>(null);
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [studentNome, setStudentNome] = useState("");
+  const [studentRm, setStudentRm] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [firstAccessModalVisible, setFirstAccessModalVisible] = useState(false);
@@ -47,7 +49,7 @@ const LoginScreen: React.FC = () => {
       const { user: loggedUser } = await login(emailTrim, senha);
       if (loggedUser.role !== "professor") {
         await logout();
-        Alert.alert("Acesso restrito", "O aplicativo de gestão é exclusivo para professores.");
+        Alert.alert("Acesso restrito", "Use a opção de aluno para entrar como estudante.");
         return;
       }
 
@@ -58,6 +60,26 @@ const LoginScreen: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleStudentLogin = useCallback(async () => {
+    const nomeTrim = studentNome.trim();
+    const rmTrim = studentRm.trim();
+
+    if (!nomeTrim || !rmTrim) {
+      Alert.alert("Atenção", "Informe nome e RM.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await continueAsStudent(nomeTrim, rmTrim);
+      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+    } catch {
+      Alert.alert("Erro", "Não foi possível entrar como aluno. Verifique nome e RM.");
+    } finally {
+      setLoading(false);
+    }
+  }, [continueAsStudent, navigation, studentNome, studentRm]);
 
   const openFirstAccessModal = useCallback(() => {
     setFirstAccessEmail(email.trim());
@@ -97,7 +119,7 @@ const LoginScreen: React.FC = () => {
 
       if (loggedUser.role !== "professor") {
         await logout();
-        Alert.alert("Acesso restrito", "O aplicativo de gestão é exclusivo para professores.");
+        Alert.alert("Acesso restrito", "Use a opção de aluno para entrar como estudante.");
         return;
       }
 
@@ -111,8 +133,7 @@ const LoginScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [closeFirstAccessModal, firstAccessConfirm, firstAccessEmail, firstAccessSenha, login, navigation]);
-
+  }, [closeFirstAccessModal, firstAccessConfirm, firstAccessEmail, firstAccessSenha, login, logout, navigation]);
 
   const handleBackToRoleSelection = useCallback(() => {
     setSelectedRole(null);
@@ -155,7 +176,7 @@ const LoginScreen: React.FC = () => {
             <View>
               <View style={styles.header}>
                 <Text style={styles.title}>Blog Escolar</Text>
-                <Text style={styles.subtitle}>Acesso exclusivo para professores</Text>
+                <Text style={styles.subtitle}>Acesso para professores e alunos</Text>
               </View>
               <View style={styles.card}>
                 {selectedRole === null && (
@@ -188,6 +209,13 @@ const LoginScreen: React.FC = () => {
                       variant="primary"
                     />
 
+                    <View style={styles.spacer} />
+                    <AppButton
+                      title="Sou aluno"
+                      onPress={() => setSelectedRole("aluno")}
+                      disabled={loading}
+                      variant="secondary"
+                    />
                   </>
                 )}
 
@@ -232,6 +260,31 @@ const LoginScreen: React.FC = () => {
                   </>
                 )}
 
+                {selectedRole === "aluno" && (
+                  <>
+                    <Text style={styles.sectionTitle}>Aluno</Text>
+                    <Text style={styles.sectionSubtitle}>Entre com nome e RM.</Text>
+                    <AppInput
+                      label="Nome"
+                      value={studentNome}
+                      onChangeText={setStudentNome}
+                      placeholder="Seu nome completo"
+                      autoCapitalize="words"
+                    />
+                    <AppInput
+                      label="RM"
+                      value={studentRm}
+                      onChangeText={setStudentRm}
+                      placeholder="Seu RM"
+                      autoCapitalize="none"
+                    />
+                    <AppButton
+                      title={loading ? "Entrando..." : "Entrar como aluno"}
+                      onPress={handleStudentLogin}
+                      disabled={loading}
+                    />
+                  </>
+                )}
               </View>
             </View>
           </ScrollView>
@@ -324,14 +377,11 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-  },
   scrollContentCentered: {
     flexGrow: 1,
     justifyContent: "center",
     paddingTop: 64,
-    paddingBottom: 160, // Sobe mais o conteúdo
+    paddingBottom: 160,
   },
   footer: {
     paddingTop: 12,
@@ -373,8 +423,6 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     opacity: 0.8,
   },
-
-
   sectionTitle: {
     fontSize: 16,
     fontWeight: "800",
@@ -386,7 +434,6 @@ const styles = StyleSheet.create({
     color: colors.muted,
     marginBottom: 12,
   },
-
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",

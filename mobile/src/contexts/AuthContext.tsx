@@ -28,9 +28,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser) as User;
-        if (parsedUser.role === "professor") {
+        if (parsedUser.role === "professor" || parsedUser.role === "aluno") {
           setUser(parsedUser);
-          canRestoreCredentials = true;
+          canRestoreCredentials = parsedUser.role === "professor";
         } else {
           await AsyncStorage.multiRemove(["auth_user", "auth_credentials"]);
         }
