@@ -24,10 +24,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const storedUser = await AsyncStorage.getItem("auth_user");
       const storedCredentials = await AsyncStorage.getItem("auth_credentials");
 
-      let canRestoreCredentials = false;
-
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser) as User;
+        setUser(parsedUser);
         if (parsedUser.role === "professor" || parsedUser.role === "aluno") {
           setUser(parsedUser);
           canRestoreCredentials = parsedUser.role === "professor";
@@ -36,8 +35,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      if (storedCredentials && canRestoreCredentials) {
-        setCredentials(JSON.parse(storedCredentials));
+        if (parsedUser.role === "professor" && storedCredentials) {
+          setCredentials(JSON.parse(storedCredentials));
+        }
       }
 
       setLoading(false);
