@@ -1,5 +1,7 @@
 # Blog Escolar Mobile
 
+> Documento complementar: veja `mobile/DOCUMENTACAO.md` para a versão detalhada de arquitetura, uso e desafios do projeto.
+
 Aplicativo mobile em **React Native + Expo** para consumo da API REST do Blog Escolar, com foco em dois perfis:
 
 - **Professor(a)**: cria, edita e exclui conteúdos e usuários.
