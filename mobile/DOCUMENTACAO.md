@@ -10,6 +10,23 @@ O app mobile foi desenvolvido com **React Native + Expo** para consumir a API do
 
 ## 2. Arquitetura do sistema (mobile)
 
+### 2.0 Desenvolvimento em React Native
+
+O desenvolvimento da interface gráfica do aplicativo mobile é realizado em
+**React Native**, com foco em reutilização de componentes e organização por
+responsabilidade.
+
+Diretrizes adotadas no projeto:
+
+- Uso de **componentes funcionais** para as telas e elementos de UI.
+- Uso de **hooks** (`useState`, `useEffect`, `useMemo`, `useContext` e hooks
+  customizados) para estado, ciclo de vida e lógica compartilhada.
+- Separação da lógica de integração com API em `services`, mantendo as telas
+  focadas em experiência do usuário.
+
+Essa abordagem melhora a legibilidade, facilita testes e acelera a manutenção
+do app ao longo das evoluções.
+
 ### 2.1 Visão geral
 
 ```text
