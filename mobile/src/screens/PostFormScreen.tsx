@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import AppButton from "../components/AppButton";
@@ -30,6 +30,7 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   const [imagemPreviewUri, setImagemPreviewUri] = useState("");
   const [imagemFile, setImagemFile] = useState<UploadFile | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingPostData, setLoadingPostData] = useState(false);
   const [areaPickerOpen, setAreaPickerOpen] = useState(false);
 
   // Snapshot inicial do formulário para detectar alterações não salvas.
@@ -68,20 +69,29 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     }
     if (mode === "edit" && postId) {
       initialSnapshotRef.current = null;
-      fetchPost(postId).then((post) => {
-        setTitulo(post.titulo);
-        setConteudo(post.conteudo);
-        setArea(post.areaDoConhecimento || "");
-        setImagemPreviewUri(post.imagem || "");
-        setImagemFile(null);
+      setLoadingPostData(true);
+      fetchPost(postId)
+        .then((post) => {
+          setTitulo(post.titulo);
+          setConteudo(post.conteudo);
+          setArea(post.areaDoConhecimento || "");
+          setImagemPreviewUri(post.imagem || "");
+          setImagemFile(null);
 
-        initialSnapshotRef.current = {
-          titulo: post.titulo || "",
-          conteudo: post.conteudo || "",
-          area: post.areaDoConhecimento || "",
-          imagemPreviewUri: post.imagem || "",
-        };
-      });
+          initialSnapshotRef.current = {
+            titulo: post.titulo || "",
+            conteudo: post.conteudo || "",
+            area: post.areaDoConhecimento || "",
+            imagemPreviewUri: post.imagem || "",
+          };
+        })
+        .catch(() => {
+          Alert.alert("Erro", "Não foi possível carregar os dados da postagem.");
+          navigation.goBack();
+        })
+        .finally(() => {
+          setLoadingPostData(false);
+        });
     }
   }, [mode, navigation, postId, user]);
 
@@ -143,6 +153,15 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
         <Text style={styles.title}>Acesso restrito</Text>
         <Text>Somente professores podem criar ou editar postagens.</Text>
       </ScrollView>
+    );
+  }
+
+  if (mode === "edit" && loadingPostData) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Carregando dados da postagem...</Text>
+      </View>
     );
   }
 
@@ -272,7 +291,11 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
           editable={false}
           inputStyle={{ fontStyle: "italic", color: colors.muted }}
         />
-        <AppButton title={loading ? "Salvando..." : "Salvar"} onPress={handleSubmit} disabled={loading} />
+        <AppButton
+          title={loading ? "Salvando..." : mode === "edit" ? "Salvar alterações" : "Salvar"}
+          onPress={handleSubmit}
+          disabled={loading || loadingPostData}
+        />
       </View>
 
       <Modal
@@ -432,6 +455,18 @@ const styles = StyleSheet.create({
   imagePreview: {
     width: "100%",
     height: 160,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+    gap: 10,
+    padding: 20,
+  },
+  loadingText: {
+    color: colors.muted,
+    fontWeight: "600",
   },
 });
 
