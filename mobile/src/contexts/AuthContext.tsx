@@ -3,54 +3,72 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { login as loginService, loginAluno as loginAlunoService } from "../services/auth";
 import type { User } from "../types";
 
+type Credentials = { email: string; senha: string };
+
 type AuthContextData = {
   user: User | null;
-  credentials: { email: string; senha: string } | null;
+  credentials: Credentials | null;
   loading: boolean;
   login: (email: string, senha: string) => Promise<{ user: User; firstAccess?: boolean }>;
   continueAsStudent: (nome: string, rm: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
+const AUTH_USER_KEY = "auth_user";
+const AUTH_CREDENTIALS_KEY = "auth_credentials";
+
 const AuthContext = createContext<AuthContextData | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [credentials, setCredentials] = useState<{ email: string; senha: string } | null>(null);
+  const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const bootstrap = async () => {
-      const storedUser = await AsyncStorage.getItem("auth_user");
-      const storedCredentials = await AsyncStorage.getItem("auth_credentials");
+      try {
+        const [storedUser, storedCredentials] = await AsyncStorage.multiGet([
+          AUTH_USER_KEY,
+          AUTH_CREDENTIALS_KEY,
+        ]);
 
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser) as User;
+        const userValue = storedUser[1];
+        const credentialsValue = storedCredentials[1];
+
+        if (!userValue) {
+          return;
+        }
+
+        const parsedUser = JSON.parse(userValue) as User;
+        if (parsedUser.role !== "professor" && parsedUser.role !== "aluno") {
+          await AsyncStorage.multiRemove([AUTH_USER_KEY, AUTH_CREDENTIALS_KEY]);
+          return;
+        }
+
         setUser(parsedUser);
-        if (parsedUser.role === "professor" || parsedUser.role === "aluno") {
-          setUser(parsedUser);
-          canRestoreCredentials = parsedUser.role === "professor";
-        } else {
-          await AsyncStorage.multiRemove(["auth_user", "auth_credentials"]);
-        }
-      }
 
-        if (parsedUser.role === "professor" && storedCredentials) {
-          setCredentials(JSON.parse(storedCredentials));
+        if (parsedUser.role === "professor" && credentialsValue) {
+          setCredentials(JSON.parse(credentialsValue) as Credentials);
         }
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
-    bootstrap();
+
+    void bootstrap();
   }, []);
 
   const login = useCallback(async (email: string, senha: string) => {
     const { user: loggedUser, firstAccess } = await loginService(email, senha);
+
     setUser(loggedUser);
     setCredentials({ email, senha });
-    await AsyncStorage.setItem("auth_user", JSON.stringify(loggedUser));
-    await AsyncStorage.setItem("auth_credentials", JSON.stringify({ email, senha }));
+
+    await AsyncStorage.multiSet([
+      [AUTH_USER_KEY, JSON.stringify(loggedUser)],
+      [AUTH_CREDENTIALS_KEY, JSON.stringify({ email, senha })],
+    ]);
+
     return { user: loggedUser, firstAccess };
   }, []);
 
@@ -59,14 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setUser(aluno);
     setCredentials(null);
-    await AsyncStorage.setItem("auth_user", JSON.stringify(aluno));
-    await AsyncStorage.removeItem("auth_credentials");
+
+    await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(aluno));
+    await AsyncStorage.removeItem(AUTH_CREDENTIALS_KEY);
   }, []);
 
   const logout = useCallback(async () => {
     setUser(null);
     setCredentials(null);
-    await AsyncStorage.multiRemove(["auth_user", "auth_credentials"]);
+    await AsyncStorage.multiRemove([AUTH_USER_KEY, AUTH_CREDENTIALS_KEY]);
   }, []);
 
   const value = useMemo(
@@ -79,8 +98,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
   if (!context) {
     throw new Error("useAuth deve ser usado dentro de AuthProvider");
   }
+
   return context;
 };

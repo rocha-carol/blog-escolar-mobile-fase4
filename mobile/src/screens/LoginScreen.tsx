@@ -21,7 +21,6 @@ type LoginRole = "professor" | "aluno";
 
 const LoginScreen: React.FC = () => {
   const { login, logout, user, continueAsStudent } = useAuth();
-  const { login, continueAsStudent, logout, user } = useAuth();
   const navigation = useNavigation<any>();
 
   const [selectedRole, setSelectedRole] = useState<LoginRole | null>(null);
@@ -30,8 +29,6 @@ const LoginScreen: React.FC = () => {
   const [senha, setSenha] = useState("");
   const [nomeAluno, setNomeAluno] = useState("");
   const [rmAluno, setRmAluno] = useState("");
-  const [studentNome, setStudentNome] = useState("");
-  const [studentRm, setStudentRm] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [firstAccessModalVisible, setFirstAccessModalVisible] = useState(false);
@@ -50,9 +47,9 @@ const LoginScreen: React.FC = () => {
     setLoading(true);
     try {
       const { user: loggedUser } = await login(emailTrim, senha);
+
       if (loggedUser.role !== "professor") {
         await logout();
-        Alert.alert("Acesso restrito", "Use o login de aluno para este perfil.");
         Alert.alert("Acesso restrito", "Use a opção de aluno para entrar como estudante.");
         return;
       }
@@ -71,11 +68,6 @@ const LoginScreen: React.FC = () => {
 
     if (!nomeTrim || !rmTrim) {
       Alert.alert("Atenção", "Informe nome e RM do aluno.");
-    const nomeTrim = studentNome.trim();
-    const rmTrim = studentRm.trim();
-
-    if (!nomeTrim || !rmTrim) {
-      Alert.alert("Atenção", "Informe nome e RM.");
       return;
     }
 
@@ -89,11 +81,6 @@ const LoginScreen: React.FC = () => {
       setLoading(false);
     }
   }, [continueAsStudent, navigation, nomeAluno, rmAluno]);
-      Alert.alert("Erro", "Não foi possível entrar como aluno. Verifique nome e RM.");
-    } finally {
-      setLoading(false);
-    }
-  }, [continueAsStudent, navigation, studentNome, studentRm]);
 
   const openFirstAccessModal = useCallback(() => {
     setFirstAccessEmail(email.trim());
@@ -131,7 +118,6 @@ const LoginScreen: React.FC = () => {
 
       if (loggedUser.role !== "professor") {
         await logout();
-        Alert.alert("Acesso restrito", "Use o login de aluno para este perfil.");
         Alert.alert("Acesso restrito", "Use a opção de aluno para entrar como estudante.");
         return;
       }
@@ -220,14 +206,6 @@ const LoginScreen: React.FC = () => {
                       disabled={loading}
                       variant="secondary"
                     />
-
-                    <View style={styles.spacer} />
-                    <AppButton
-                      title="Sou aluno"
-                      onPress={() => setSelectedRole("aluno")}
-                      disabled={loading}
-                      variant="secondary"
-                    />
                   </>
                 )}
 
@@ -273,25 +251,19 @@ const LoginScreen: React.FC = () => {
                     <Text style={styles.sectionTitle}>Aluno</Text>
                     <Text style={styles.sectionSubtitle}>Entre com nome e RM.</Text>
 
-                    <AppInput label="Nome" value={nomeAluno} onChangeText={setNomeAluno} placeholder="Seu nome" />
-                    <AppInput
-                      label="RM"
-                      value={rmAluno}
-                      onChangeText={setRmAluno}
-                      placeholder="Seu RM"
-                      keyboardType="number-pad"
                     <AppInput
                       label="Nome"
-                      value={studentNome}
-                      onChangeText={setStudentNome}
+                      value={nomeAluno}
+                      onChangeText={setNomeAluno}
                       placeholder="Seu nome completo"
                       autoCapitalize="words"
                     />
                     <AppInput
                       label="RM"
-                      value={studentRm}
-                      onChangeText={setStudentRm}
+                      value={rmAluno}
+                      onChangeText={setRmAluno}
                       placeholder="Seu RM"
+                      keyboardType="numeric"
                       autoCapitalize="none"
                     />
                     <AppButton
@@ -358,7 +330,12 @@ const LoginScreen: React.FC = () => {
                 <AppButton title="Cancelar" onPress={closeFirstAccessModal} variant="secondary" size="sm" />
               </View>
               <View style={styles.actionBtn}>
-                <AppButton title={loading ? "Salvando..." : "Criar e entrar"} onPress={handleFirstAccess} size="sm" disabled={loading} />
+                <AppButton
+                  title={loading ? "Salvando..." : "Criar e entrar"}
+                  onPress={handleFirstAccess}
+                  size="sm"
+                  disabled={loading}
+                />
               </View>
             </View>
           </Pressable>
@@ -369,15 +346,6 @@ const LoginScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  keyboard: { flex: 1, padding: 24 },
-  page: { flex: 1 },
-  scroll: { flex: 1 },
-  scrollContentCentered: { flexGrow: 1, justifyContent: "center", paddingTop: 64, paddingBottom: 160 },
-  footer: { paddingTop: 12 },
-  header: { alignItems: "center", marginBottom: 28 },
-  title: { fontSize: 30, fontWeight: "700", color: colors.text, textAlign: "center" },
-  subtitle: { fontSize: 16, color: colors.muted, textAlign: "center", marginTop: 6 },
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -429,16 +397,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2,
   },
-  spacer: { height: 12 },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: 16, opacity: 0.8 },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: colors.text, marginBottom: 2 },
-  sectionSubtitle: { fontSize: 14, color: colors.muted, marginBottom: 12 },
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", padding: 20, justifyContent: "center" },
-  modalCard: { backgroundColor: colors.white, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
-  modalTitle: { fontSize: 16, fontWeight: "800", color: colors.text, marginBottom: 4 },
-  modalSubtitle: { color: colors.muted, marginBottom: 12 },
-  actions: { flexDirection: "row", justifyContent: "flex-end", gap: 12 },
-  actionBtn: { minWidth: 96 },
   spacer: {
     height: 12,
   },
