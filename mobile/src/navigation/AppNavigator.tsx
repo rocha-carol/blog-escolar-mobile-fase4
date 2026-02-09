@@ -11,7 +11,7 @@ import PostsListScreen from "../screens/PostsListScreen";
 import PostDetailsScreen from "../screens/PostDetailsScreen";
 import PostFormScreen from "../screens/PostFormScreen";
 import AdminProtectedScreen from "../screens/AdminProtectedScreen";
-import UserManagementProtectedScreen from "../screens/UserManagementProtectedScreen";
+import ProfessoresListProtectedScreen from "../screens/ProfessoresListProtectedScreen";
 import UserFormScreen from "../screens/UserFormScreen";
 import StudentScreen from "../screens/StudentScreen";
 import colors from "../theme/colors";
@@ -56,8 +56,8 @@ const MainTabs = () => {
           />
           <Tab.Screen
             name="Professores"
-            component={UserManagementProtectedScreen}
-            options={{ title: "Gerenciar usuários", unmountOnBlur: true }}
+            component={ProfessoresListProtectedScreen}
+            options={{ title: "Professores", unmountOnBlur: true }}
           />
         </>
       )}
