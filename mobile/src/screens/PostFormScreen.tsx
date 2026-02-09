@@ -1,23 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import AppButton from "../components/AppButton";
 import AppInput from "../components/AppInput";
 import colors from "../theme/colors";
 import { createPost, fetchPost, updatePost } from "../services/posts";
-import type { UploadFile } from "../services/posts";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
-
-const AREAS_CONHECIMENTO = [
-  "Linguagens",
-  "Matemática",
-  "Ciências da Natureza",
-  "Ciências Humanas",
-  "Tecnologias",
-];
 
 const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
   const { mode, postId, origin } = route.params || { mode: "create" };
@@ -25,22 +17,18 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   const toast = useToast();
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
-  const [area, setArea] = useState("");
   const [autoria, setAutoria] = useState("");
-  const [imagemPreviewUri, setImagemPreviewUri] = useState("");
-  const [imagemFile, setImagemFile] = useState<UploadFile | null>(null);
+  const [area, setArea] = useState("Linguagens");
   const [loading, setLoading] = useState(false);
+  const [loadingPostData, setLoadingPostData] = useState(false);
   const [areaPickerOpen, setAreaPickerOpen] = useState(false);
 
-  // Snapshot inicial do formulário para detectar alterações não salvas.
   const initialSnapshotRef = useRef<{
     titulo: string;
     conteudo: string;
-    area: string;
-    imagemPreviewUri: string;
+    autoria: string;
   } | null>(null);
 
-  // Flag setada após salvar para permitir navegação sem alerta.
   const allowExitWithoutPromptRef = useRef(false);
 
   useEffect(() => {
@@ -54,11 +42,10 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
       initialSnapshotRef.current = {
         titulo: "",
         conteudo: "",
-        area: "",
-        imagemPreviewUri: "",
+        autoria: user?.nome || "",
       };
     }
-  }, [mode]);
+  }, [mode, user?.nome]);
 
   useEffect(() => {
     if (user && user.role !== "professor") {
@@ -66,20 +53,19 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
       navigation.navigate("Main");
       return;
     }
+
     if (mode === "edit" && postId) {
       initialSnapshotRef.current = null;
       fetchPost(postId).then((post) => {
-        setTitulo(post.titulo);
-        setConteudo(post.conteudo);
-        setArea(post.areaDoConhecimento || "");
-        setImagemPreviewUri(post.imagem || "");
-        setImagemFile(null);
+        setTitulo(post.titulo || "");
+        setConteudo(post.conteudo || "");
+        setAutoria(post.autoria || user?.nome || "");
+        setArea(post.areaDoConhecimento || "Linguagens");
 
         initialSnapshotRef.current = {
           titulo: post.titulo || "",
           conteudo: post.conteudo || "",
-          area: post.areaDoConhecimento || "",
-          imagemPreviewUri: post.imagem || "",
+          autoria: post.autoria || user?.nome || "",
         };
       });
     }
@@ -89,16 +75,8 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     const snap = initialSnapshotRef.current;
     if (!snap) return false;
 
-    const textChanged =
-      titulo !== snap.titulo ||
-      conteudo !== snap.conteudo ||
-      area !== snap.area ||
-      imagemPreviewUri !== snap.imagemPreviewUri;
-
-    const pickedNewImage = Boolean(imagemFile);
-
-    return textChanged || pickedNewImage;
-  }, [area, conteudo, imagemFile, imagemPreviewUri, titulo]);
+    return titulo !== snap.titulo || conteudo !== snap.conteudo || autoria !== snap.autoria;
+  }, [autoria, conteudo, titulo]);
 
   useUnsavedChangesGuard({
     navigation,
@@ -106,36 +84,6 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     hasUnsavedChanges,
     allowExitWithoutPromptRef,
   });
-
-  const handlePickImage = async () => {
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert("Permissão necessária", "Precisamos de acesso à galeria para selecionar a imagem.");
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.85,
-      });
-
-      if (result.canceled) return;
-
-      const asset = result.assets?.[0];
-      if (!asset?.uri) return;
-
-      const uri = asset.uri;
-      const nameFromUri = uri.split("/").pop() || "imagem.jpg";
-      const type = (asset as any)?.mimeType || "image/jpeg";
-
-      setImagemPreviewUri(uri);
-      setImagemFile({ uri, name: nameFromUri, type });
-    } catch (e) {
-      Alert.alert("Erro", "Não foi possível selecionar a imagem.");
-    }
-  };
 
   if (!user || user.role !== "professor") {
     return (
@@ -146,38 +94,42 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     );
   }
 
+  if (mode === "edit" && loadingPostData) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Carregando dados da postagem...</Text>
+      </View>
+    );
+  }
+
   const handleSubmit = async () => {
     if (!user || user.role !== "professor") return;
-    const tituloOk = Boolean(titulo?.trim());
-    const conteudoOk = Boolean(conteudo?.trim());
-    const areaOk = Boolean(area?.trim());
-    const imagemOk = Boolean(imagemFile) || Boolean(imagemPreviewUri?.trim());
 
-    if (!imagemOk) {
-      Alert.alert("Atenção", "Selecione uma imagem.");
-      return;
-    }
-    if (!tituloOk) {
+    if (!titulo.trim()) {
       Alert.alert("Atenção", "Preencha o título.");
       return;
     }
-    if (!conteudoOk) {
+
+    if (!conteudo.trim()) {
       Alert.alert("Atenção", "Preencha o conteúdo.");
       return;
     }
-    if (!areaOk) {
-      Alert.alert("Atenção", "Selecione a área do conhecimento.");
+
+    if (!autoria.trim()) {
+      Alert.alert("Atenção", "Preencha o autor.");
       return;
     }
+
     setLoading(true);
     try {
       const payload = {
-        titulo,
-        conteudo,
-        autoria: user.nome,
-        areaDoConhecimento: area || undefined,
-        imagem: imagemFile,
+        titulo: titulo.trim(),
+        conteudo: conteudo.trim(),
+        autoria: autoria.trim(),
+        areaDoConhecimento: area,
       };
+
       if (mode === "edit" && postId) {
         await updatePost(postId, payload);
         toast.show("Post atualizado com sucesso.", { variant: "success" });
@@ -201,7 +153,7 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
       allowExitWithoutPromptRef.current = true;
       navigation.goBack();
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível salvar a postagem.");
+      Alert.alert("Erro", "Não foi possível enviar a postagem ao servidor.");
     } finally {
       setLoading(false);
     }
@@ -209,37 +161,8 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text style={styles.title}>{mode === "edit" ? "Editar Postagem" : "Nova Postagem"}</Text>
+      <Text style={styles.title}>{mode === "edit" ? "Editar Postagem" : "Criar Postagem"}</Text>
       <View style={styles.card}>
-        <View style={styles.imageSection}>
-          <Text style={styles.dropdownLabel}>Imagem *</Text>
-          {!!imagemPreviewUri && (
-            <View style={styles.imagePreviewWrap}>
-              <Image source={{ uri: imagemPreviewUri }} style={styles.imagePreview} resizeMode="cover" />
-            </View>
-          )}
-
-          <View style={[styles.imageRow, !!imagemPreviewUri && styles.imageRowBelowPreview]}>
-            <AppButton
-              title={imagemPreviewUri ? "Trocar imagem" : "Selecionar imagem"}
-              onPress={handlePickImage}
-              variant="secondary"
-            />
-            {!!imagemPreviewUri && (
-              <Pressable
-                onPress={() => {
-                  setImagemPreviewUri("");
-                  setImagemFile(null);
-                }}
-                style={styles.clearImageBtn}
-              >
-                <Ionicons name="close-circle-outline" size={20} color={colors.muted} />
-                <Text style={styles.clearImageText}>Remover</Text>
-              </Pressable>
-            )}
-          </View>
-        </View>
-
         <AppInput label="Título *" value={titulo} onChangeText={setTitulo} placeholder="Digite o título" />
         <AppInput
           label="Conteúdo *"
@@ -248,63 +171,19 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
           multiline
           placeholder="Escreva o conteúdo da postagem"
         />
+        <AppInput label="Autor *" value={autoria} onChangeText={setAutoria} placeholder="Nome do autor" />
 
-        <View style={styles.dropdownWrapper}>
-          <Text style={styles.dropdownLabel}>Área do conhecimento *</Text>
-          <Pressable
-            onPress={() => setAreaPickerOpen(true)}
-            style={styles.dropdownContainer}
-            accessibilityRole="button"
-            accessibilityLabel="Selecionar área do conhecimento"
-          >
-            <Text style={[styles.dropdownValue, !area && styles.dropdownPlaceholder]} numberOfLines={1}>
-              {area || "Selecione uma área"}
-            </Text>
-            <Ionicons name="chevron-down-outline" size={18} color={colors.muted} />
-          </Pressable>
-        </View>
-
-        <AppInput
-          label="Autor"
-          value={autoria}
-          onChangeText={setAutoria}
-          placeholder="Nome do autor"
-          editable={false}
-          inputStyle={{ fontStyle: "italic", color: colors.muted }}
+        <AppButton
+          title={loading ? "Enviando..." : "Enviar Postagem"}
+          onPress={handleSubmit}
+          disabled={loading}
         />
-        <AppButton title={loading ? "Salvando..." : "Salvar"} onPress={handleSubmit} disabled={loading} />
+        <AppButton
+          title={loading ? "Salvando..." : mode === "edit" ? "Salvar alterações" : "Salvar"}
+          onPress={handleSubmit}
+          disabled={loading || loadingPostData}
+        />
       </View>
-
-      <Modal
-        visible={areaPickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setAreaPickerOpen(false)}
-      >
-        <Pressable style={styles.modalBackdrop} onPress={() => setAreaPickerOpen(false)}>
-          <Pressable style={styles.modalCard} onPress={() => null}>
-            <Text style={styles.modalTitle}>Selecione a área</Text>
-            {AREAS_CONHECIMENTO.map((opt) => {
-              const active = opt === area;
-              return (
-                <Pressable
-                  key={opt}
-                  onPress={() => {
-                    setArea(opt);
-                    setAreaPickerOpen(false);
-                  }}
-                  style={[styles.modalOption, active && styles.modalOptionActive]}
-                >
-                  <Text style={[styles.modalOptionText, active && styles.modalOptionTextActive]}>
-                    {opt}
-                  </Text>
-                  {active && <Ionicons name="checkmark-outline" size={18} color={colors.secondary} />}
-                </Pressable>
-              );
-            })}
-          </Pressable>
-        </Pressable>
-      </Modal>
     </ScrollView>
   );
 };
@@ -432,6 +311,18 @@ const styles = StyleSheet.create({
   imagePreview: {
     width: "100%",
     height: 160,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+    gap: 10,
+    padding: 20,
+  },
+  loadingText: {
+    color: colors.muted,
+    fontWeight: "600",
   },
 });
 
