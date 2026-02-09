@@ -13,6 +13,7 @@ import PostFormScreen from "../screens/PostFormScreen";
 import AdminProtectedScreen from "../screens/AdminProtectedScreen";
 import UserManagementProtectedScreen from "../screens/UserManagementProtectedScreen";
 import UserFormScreen from "../screens/UserFormScreen";
+import CreateProfessorScreen from "../screens/CreateProfessorScreen";
 import StudentScreen from "../screens/StudentScreen";
 import colors from "../theme/colors";
 
@@ -120,6 +121,11 @@ const AppNavigator = () => {
               <>
                 <Stack.Screen name="PostForm" component={PostFormScreen} options={{ title: "Blog Escolar" }} />
                 <Stack.Screen name="UserForm" component={UserFormScreen} options={{ title: "Blog Escolar" }} />
+                <Stack.Screen
+                  name="CreateProfessor"
+                  component={CreateProfessorScreen}
+                  options={{ title: "Blog Escolar" }}
+                />
               </>
             )}
           </>
