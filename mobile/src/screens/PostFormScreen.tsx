@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -22,7 +23,9 @@ import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 const AREA_OPTIONS = ["Linguagens", "Matemática", "Ciências Humanas", "Ciências da Natureza", "Tecnologia"];
 
+// Componente principal para criar ou editar post
 const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
+  // Extrai modo, id do post e origem
   const { mode, postId, origin } = route.params || { mode: "create" };
   const { user } = useAuth();
   const toast = useToast();
@@ -41,12 +44,14 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   const initialSnapshotRef = useRef<{ titulo: string; conteudo: string; autoria: string; area: string; imagem: string | null } | null>(null);
   const allowExitWithoutPromptRef = useRef(false);
 
+  // Preenche autoria com nome do usuário
   useEffect(() => {
     if (user?.nome && mode !== "edit") {
       setAutoria(user.nome);
     }
   }, [mode, user?.nome]);
 
+  // Inicializa snapshot ao criar ou editar
   useEffect(() => {
     const loadPost = async () => {
       if (!user || user.role !== "professor") {

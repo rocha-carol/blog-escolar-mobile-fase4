@@ -1,6 +1,7 @@
 import api, { assertProfessorPermission } from "./api";
 import type { PaginatedResponse, User, UserRole } from "../types";
 
+// Cria um novo usuário (professor ou aluno)
 export async function createUser(payload:
   | {
       nome: string;
@@ -18,6 +19,7 @@ export async function createUser(payload:
   return response.data.usuario;
 }
 
+// Busca lista de usuários com filtros e paginação
 export async function fetchUsers(params: {
   role: UserRole;
   termo?: string;
@@ -44,12 +46,14 @@ export async function fetchUsers(params: {
   };
 }
 
+// Busca um usuário pelo id
 export async function fetchUser(id: string): Promise<User> {
   await assertProfessorPermission();
   const response = await api.get(`/usuarios/${id}`);
   return response.data.usuario;
 }
 
+// Atualiza dados de um usuário
 export async function updateUser(id: string, payload: {
   nome: string;
   role: UserRole;
@@ -62,6 +66,7 @@ export async function updateUser(id: string, payload: {
   return response.data.usuario;
 }
 
+// Remove um usuário pelo id
 export async function deleteUser(id: string): Promise<void> {
   await assertProfessorPermission();
   await api.delete(`/usuarios/${id}`);

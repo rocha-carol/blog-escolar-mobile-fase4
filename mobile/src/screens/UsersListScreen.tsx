@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import AppButton from "../components/AppButton";
@@ -8,9 +9,12 @@ import type { UserRole, User } from "../types";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
 
+// Componente principal para listar usuários
 const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
+  // Navegação e autenticação
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+  // Estados para usuários, carregamento, paginação e busca
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -20,6 +24,7 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
   const [debouncedTermo, setDebouncedTermo] = useState("");
   const limit = 10;
 
+  // Aplica debounce ao termo de busca
   useEffect(() => {
     const trimmed = termo.trim();
     const t = setTimeout(() => {
@@ -28,6 +33,7 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
     return () => clearTimeout(t);
   }, [termo]);
 
+  // Função para buscar usuários
   const loadUsers = useCallback(
     async (nextPage = 1) => {
     setLoading(true);
@@ -44,17 +50,18 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
     [debouncedTermo, limit, role]
   );
 
+  // Busca usuários ao abrir a tela ou mudar o papel
   useEffect(() => {
     loadUsers(1);
   }, [loadUsers, role]);
 
+  // Busca usuários ao alterar termo de busca
   useEffect(() => {
     // Ao alterar o termo (após debounce), reinicia na página 1.
     loadUsers(1);
   }, [debouncedTermo, loadUsers]);
 
-  // Ao voltar do formulário (criar/editar) a tela ganha foco novamente.
-  // Recarregamos a página 1 para refletir as alterações na lista.
+  // Recarrega lista ao voltar do formulário
   useFocusEffect(
     useCallback(() => {
       // Ao voltar do formulário (criar/editar), recarrega a página atual
@@ -63,6 +70,7 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
     }, [loadUsers, page])
   );
 
+  // Verifica permissão para gerenciar usuários
   useEffect(() => {
     if (user && user.role !== "professor") {
       Alert.alert("Acesso restrito", "Apenas professores podem gerenciar usuários.");
@@ -70,6 +78,7 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
     }
   }, [navigation, user]);
 
+  // Função para excluir usuário
   const handleDelete = (userId: string) => {
     Alert.alert("Excluir", "Deseja remover este usuário?", [
       { text: "Cancelar", style: "cancel" },

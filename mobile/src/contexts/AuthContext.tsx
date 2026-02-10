@@ -1,3 +1,4 @@
+// Importa AsyncStorage para salvar dados localmente e React para hooks/contexto
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { login as loginService, loginAluno as loginAlunoService } from "../services/auth";
@@ -19,11 +20,13 @@ const AUTH_CREDENTIALS_KEY = "auth_credentials";
 
 const AuthContext = createContext<AuthContextData | undefined>(undefined);
 
+// Provider que envolve o app e fornece o contexto de autenticação
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Carrega usuário e credenciais salvos ao iniciar o app
   useEffect(() => {
     const bootstrap = async () => {
       try {
@@ -58,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     void bootstrap();
   }, []);
 
+  // Função para login de professor
   const login = useCallback(async (email: string, senha: string) => {
     const { user: loggedUser, firstAccess } = await loginService(email, senha);
 
@@ -72,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { user: loggedUser, firstAccess };
   }, []);
 
+  // Função para login de aluno
   const continueAsStudent = useCallback(async (nome: string, rm: string) => {
     const aluno = await loginAlunoService(nome, rm);
 
@@ -82,20 +87,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await AsyncStorage.removeItem(AUTH_CREDENTIALS_KEY);
   }, []);
 
+  // Função para logout (sair do app)
   const logout = useCallback(async () => {
     setUser(null);
     setCredentials(null);
     await AsyncStorage.multiRemove([AUTH_USER_KEY, AUTH_CREDENTIALS_KEY]);
   }, []);
 
+  // Monta o valor do contexto para ser usado nos componentes
   const value = useMemo(
     () => ({ user, credentials, loading, login, continueAsStudent, logout }),
     [user, credentials, loading, login, continueAsStudent, logout]
   );
 
+  // Retorna o provider com o valor do contexto
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// Hook para acessar o contexto de autenticação
 export const useAuth = () => {
   const context = useContext(AuthContext);
 

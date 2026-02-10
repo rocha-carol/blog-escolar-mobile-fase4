@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useCallback, useState } from "react";
 import {
   Alert,
@@ -17,25 +18,29 @@ import AppInput from "../components/AppInput";
 import colors from "../theme/colors";
 import { useAuth } from "../contexts/AuthContext";
 
+// Define tipos de perfil para login
 type LoginRole = "professor" | "aluno";
 
+// Componente principal da tela de login
 const LoginScreen: React.FC = () => {
   const { login, logout, user, continueAsStudent } = useAuth();
   const navigation = useNavigation<any>();
 
+  // Estados para perfil, email, senha e carregamento
   const [selectedRole, setSelectedRole] = useState<LoginRole | null>(null);
-
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [nomeAluno, setNomeAluno] = useState("");
   const [rmAluno, setRmAluno] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Estados para modal de primeiro acesso
   const [firstAccessModalVisible, setFirstAccessModalVisible] = useState(false);
   const [firstAccessEmail, setFirstAccessEmail] = useState("");
   const [firstAccessSenha, setFirstAccessSenha] = useState("");
   const [firstAccessConfirm, setFirstAccessConfirm] = useState("");
 
+  // Função para login
   const handleLogin = async () => {
     const emailTrim = email.trim();
 
@@ -93,6 +98,7 @@ const LoginScreen: React.FC = () => {
     setFirstAccessModalVisible(false);
   }, []);
 
+  // Função para primeiro acesso
   const handleFirstAccess = useCallback(async () => {
     const emailTrim = firstAccessEmail.trim();
 

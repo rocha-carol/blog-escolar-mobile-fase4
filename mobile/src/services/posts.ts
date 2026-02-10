@@ -1,12 +1,14 @@
 import api, { assertProfessorPermission } from "./api";
 import type { Post, PaginatedResponse } from "../types";
 
+// Define o formato do arquivo de imagem para upload
 export type UploadFile = {
   uri: string;
   name: string;
   type: string;
 };
 
+// Função para normalizar dados de post vindos do backend
 function normalizePost(raw: any): Post {
   return {
     _id: String(raw?._id ?? raw?.id ?? ""),
@@ -23,6 +25,7 @@ function normalizePost(raw: any): Post {
   };
 }
 
+// Busca lista de posts com filtros e paginação
 export async function fetchPosts(params?: {
   page?: number;
   limit?: number;
@@ -33,10 +36,10 @@ export async function fetchPosts(params?: {
   if (params?.page) searchParams.set("page", String(params.page));
   if (params?.limit) searchParams.set("limit", String(params.limit));
 
-  // Contrato de busca: /posts/search usa `q` para termo livre.
+  // Busca por termo livre
   if (params?.termo) searchParams.set("q", params.termo);
 
-  // Contrato de filtro: /posts aceita `autor` como filtro exato.
+  // Filtro por autor
   if (params?.autor) searchParams.set("autor", params.autor);
 
   const url = params?.termo ? `/posts/search?${searchParams.toString()}` : `/posts?${searchParams.toString()}`;
@@ -67,11 +70,13 @@ export async function fetchPosts(params?: {
   };
 }
 
+// Busca um post pelo id
 export async function fetchPost(id: string): Promise<Post> {
   const response = await api.get(`/posts/${id}`);
   return normalizePost(response.data);
 }
 
+// Cria um novo post
 export async function createPost(payload: {
   titulo: string;
   conteudo: string;
@@ -96,6 +101,7 @@ export async function createPost(payload: {
   return normalizePost(response.data);
 }
 
+// Atualiza um post existente
 export async function updatePost(id: string, payload: {
   titulo: string;
   conteudo: string;
@@ -120,6 +126,7 @@ export async function updatePost(id: string, payload: {
   return normalizePost(response.data);
 }
 
+// Remove um post pelo id
 export async function deletePost(id: string): Promise<void> {
   await assertProfessorPermission();
   await api.delete(`/posts/${id}`);

@@ -5,10 +5,12 @@ import { useNavigation } from "@react-navigation/native";
 import colors from "../theme/colors";
 import { useAuth } from "../contexts/AuthContext";
 
+// Botão de login/logout exibido no cabeçalho do app
 const HeaderLogoutButton: React.FC = () => {
   const navigation = useNavigation<any>();
   const { user, logout } = useAuth();
 
+  // Função chamada ao clicar em sair
   const handleLogout = () => {
     Alert.alert("Sair", "Deseja encerrar sua sessão?", [
       { text: "Cancelar", style: "cancel" },
@@ -23,20 +25,24 @@ const HeaderLogoutButton: React.FC = () => {
     ]);
   };
 
+  // Função chamada ao clicar em login
   const handleLogin = () => {
     navigation.navigate("Login");
   };
 
+  // Pega o nome do usuário logado
   const fullName = user?.nome?.trim() ?? "";
 
   return (
     <View style={styles.container}>
+      {/* Exibe nome do usuário e ícone */}
       <View style={styles.userWrap}>
         <Ionicons name="person-circle-outline" size={16} color={colors.secondary} />
         <Text style={styles.userName} numberOfLines={2}>
           {fullName || "login"}
         </Text>
       </View>
+      {/* Botão de login ou logout */}
       <Pressable
         onPress={user ? handleLogout : handleLogin}
         style={styles.button}
@@ -54,6 +60,7 @@ const HeaderLogoutButton: React.FC = () => {
   );
 };
 
+// Estilos do botão e do nome do usuário
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",

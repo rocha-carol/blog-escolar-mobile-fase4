@@ -14,7 +14,9 @@ import colors from "../theme/colors";
 import { fetchPosts } from "../services/posts";
 import type { Post } from "../types";
 
+// Componente principal para listar posts
 const PostsListScreen: React.FC = () => {
+  // Navegação e estados para posts, busca, área e paginação
   const navigation = useNavigation<any>();
   const [posts, setPosts] = useState<Post[]>([]);
   const [search, setSearch] = useState("");

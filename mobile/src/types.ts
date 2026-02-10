@@ -1,5 +1,7 @@
+// Define os tipos de papéis de usuário
 export type UserRole = "professor" | "aluno";
 
+// Define o formato dos dados de usuário
 export type User = {
   id: string;
   nome: string;
@@ -10,6 +12,7 @@ export type User = {
   podeGerenciarUsuarios?: boolean;
 };
 
+// Define o formato dos dados de post
 export type Post = {
   _id: string;
   titulo: string;
@@ -24,6 +27,7 @@ export type Post = {
   comentariosCount?: number;
 };
 
+// Define o formato de resposta paginada para listas
 export type PaginatedResponse<T> = {
   items: T[];
   total: number;

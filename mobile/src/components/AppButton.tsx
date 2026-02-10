@@ -1,26 +1,30 @@
+// Importa React e componentes do React Native
 import React from "react";
 import { Pressable, Text, StyleSheet } from "react-native";
+// Importa cores do tema
 import colors from "../theme/colors";
 
+// Define as propriedades aceitas pelo botão
 type Props = {
-  title: string;
-  onPress: () => void;
-  variant?: "primary" | "secondary" | "danger";
-  disabled?: boolean;
-  size?: "sm" | "md";
+  title: string; // Texto exibido no botão
+  onPress: () => void; // Função chamada ao clicar
+  variant?: "primary" | "secondary" | "danger"; // Cor do botão
+  disabled?: boolean; // Desabilita o botão
+  size?: "sm" | "md"; // Tamanho do botão
 };
 
+// Componente de botão reutilizável
 const AppButton: React.FC<Props> = ({ title, onPress, variant = "primary", disabled, size = "md" }) => {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
-        styles.base,
-        size === "sm" && styles.baseSm,
-        styles[variant],
-        disabled && styles.disabled,
-        pressed && !disabled && styles.pressed,
+        styles.base, // Estilo base
+        size === "sm" && styles.baseSm, // Estilo para botão pequeno
+        styles[variant], // Estilo conforme variante
+        disabled && styles.disabled, // Estilo se desabilitado
+        pressed && !disabled && styles.pressed, // Estilo ao pressionar
       ]}
     >
       <Text style={[styles.text, size === "sm" && styles.textSm]}>{title}</Text>
@@ -28,6 +32,7 @@ const AppButton: React.FC<Props> = ({ title, onPress, variant = "primary", disab
   );
 };
 
+// Estilos do botão para diferentes variações e estados
 const styles = StyleSheet.create({
   base: {
     paddingVertical: 12,
