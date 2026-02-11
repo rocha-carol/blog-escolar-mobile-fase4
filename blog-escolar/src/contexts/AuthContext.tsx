@@ -53,6 +53,7 @@ export const AuthProvider: React.FC<ChildrenProps> = ({ children }) => {
     setUser(response.usuario);
     localStorage.setItem("token", response.token);
     localStorage.setItem("user", JSON.stringify(response.usuario));
+    sessionStorage.setItem("authPassword", password);
   };
 
   // Função de logout
@@ -61,6 +62,7 @@ export const AuthProvider: React.FC<ChildrenProps> = ({ children }) => {
     setToken(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    sessionStorage.removeItem("authPassword");
   };
 
   return (

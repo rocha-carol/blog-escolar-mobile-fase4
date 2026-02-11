@@ -4,7 +4,6 @@ import { FaFont, FaArrowsAltV } from 'react-icons/fa';
 import { MdAccessibility, MdRefresh } from 'react-icons/md';
 import { AiOutlinePlus, AiOutlineMinus } from 'react-icons/ai';
 import { Link } from 'react-router-dom';
-// ...existing code...
 import NightModeToggle from './NightModeToggle';
 
 const options = [

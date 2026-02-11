@@ -5,20 +5,16 @@ import colors from "../theme/colors";
 import { useManagementAuth } from "../contexts/ManagementAuthContext";
 import UsersListScreen from "./UsersListScreen";
 
-// Componente principal para proteger área de gerenciamento de usuários
-const UserManagementProtectedScreen: React.FC = () => {
-  // Navegação e autenticação de gerenciamento
+const ProfessoresListProtectedScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { isAuthorized, ensureAuthorized, resetAuthorization } = useManagementAuth();
 
-  // Reseta autorização ao sair da aba
   useEffect(() => {
     return () => {
       resetAuthorization();
     };
   }, [resetAuthorization]);
 
-  // Garante autorização ao entrar na tela
   useFocusEffect(
     useCallback(() => {
       let mounted = true;
@@ -37,12 +33,11 @@ const UserManagementProtectedScreen: React.FC = () => {
     }, [ensureAuthorized, isAuthorized, navigation])
   );
 
-  // Exibe mensagem se não estiver autorizado
   if (!isAuthorized) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Autorização necessária</Text>
-        <Text style={styles.text}>Digite a senha para acessar o gerenciamento.</Text>
+        <Text style={styles.text}>Digite a senha para acessar a listagem de professores.</Text>
       </View>
     );
   }
@@ -50,7 +45,6 @@ const UserManagementProtectedScreen: React.FC = () => {
   return <UsersListScreen role="professor" />;
 };
 
-// Estilos para cada parte da tela
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -71,5 +65,4 @@ const styles = StyleSheet.create({
   },
 });
 
-// Exporta o componente para ser usado em outras telas
-export default UserManagementProtectedScreen;
+export default ProfessoresListProtectedScreen;

@@ -19,6 +19,7 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
   const [termo, setTermo] = useState("");
   const [debouncedTermo, setDebouncedTermo] = useState("");
   const limit = 10;
@@ -40,6 +41,7 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
       const response = await fetchUsers({ role, termo: debouncedTermo, page: nextPage, limit });
       setHasMore(response.hasMore);
       setPage(response.page);
+      setTotal(response.total);
       setUsers(response.items);
     } finally {
       setLoading(false);
@@ -84,8 +86,12 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
         text: "Excluir",
         style: "destructive",
         onPress: async () => {
-          await deleteUser(userId);
-          loadUsers(1);
+          try {
+            await deleteUser(userId);
+            await loadUsers(1);
+          } catch {
+            Alert.alert("Erro", "Não foi possível excluir o usuário.");
+          }
         },
       },
     ]);
@@ -113,6 +119,7 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
 
   const canGoPrev = page > 1;
   const canGoNext = hasMore;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
     <View style={styles.container}>
@@ -131,7 +138,11 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
       <View style={styles.addButton}>
         <AppButton
           title={role === "professor" ? "Cadastrar professor" : "Cadastrar aluno"}
-          onPress={() => navigation.navigate("UserForm", { mode: "create", role })}
+          onPress={() =>
+            role === "professor"
+              ? navigation.navigate("CreateProfessor")
+              : navigation.navigate("UserForm", { mode: "create", role })
+          }
         />
       </View>
       <FlatList
@@ -168,7 +179,7 @@ const UsersListScreen: React.FC<{ role: UserRole }> = ({ role }) => {
                 <View style={styles.paginationSpacer} />
               )}
 
-              <Text style={styles.paginationText}>Página {page}</Text>
+              <Text style={styles.paginationText}>Página {page} de {totalPages}</Text>
 
               {canGoNext ? (
                 <AppButton

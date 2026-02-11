@@ -1,25 +1,27 @@
 // Importa bibliotecas para criar a tela e manipular dados
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import AppButton from "../components/AppButton";
 import AppInput from "../components/AppInput";
 import colors from "../theme/colors";
-import { createPost, fetchPost, updatePost } from "../services/posts";
-import type { UploadFile } from "../services/posts";
+import { createPost, fetchPost, type UploadFile, updatePost } from "../services/posts";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
-// Áreas de conhecimento disponíveis
-const AREAS_CONHECIMENTO = [
-  "Linguagens",
-  "Matemática",
-  "Ciências da Natureza",
-  "Ciências Humanas",
-  "Tecnologias",
-];
+const AREA_OPTIONS = ["Linguagens", "Matemática", "Ciências Humanas", "Ciências da Natureza", "Tecnologia"];
 
 // Componente principal para criar ou editar post
 const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
@@ -27,86 +29,86 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
   const { mode, postId, origin } = route.params || { mode: "create" };
   const { user } = useAuth();
   const toast = useToast();
-  // Estados para campos do formulário
+
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
-  const [area, setArea] = useState("");
   const [autoria, setAutoria] = useState("");
-  const [imagemPreviewUri, setImagemPreviewUri] = useState("");
-  const [imagemFile, setImagemFile] = useState<UploadFile | null>(null);
+  const [area, setArea] = useState(AREA_OPTIONS[0]);
+  const [imagem, setImagem] = useState<UploadFile | null>(null);
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
+  const [loadingPostData, setLoadingPostData] = useState(false);
   const [areaPickerOpen, setAreaPickerOpen] = useState(false);
 
-  // Snapshot inicial do formulário para detectar alterações não salvas
-  const initialSnapshotRef = useRef<{
-    titulo: string;
-    conteudo: string;
-    area: string;
-    imagemPreviewUri: string;
-  } | null>(null);
-
-  // Flag para permitir navegação sem alerta após salvar
+  const initialSnapshotRef = useRef<{ titulo: string; conteudo: string; autoria: string; area: string; imagem: string | null } | null>(null);
   const allowExitWithoutPromptRef = useRef(false);
 
   // Preenche autoria com nome do usuário
   useEffect(() => {
-    if (user?.nome) {
+    if (user?.nome && mode !== "edit") {
       setAutoria(user.nome);
     }
-  }, [user?.nome]);
+  }, [mode, user?.nome]);
 
   // Inicializa snapshot ao criar ou editar
   useEffect(() => {
-    if (mode !== "edit") {
-      initialSnapshotRef.current = {
-        titulo: "",
-        conteudo: "",
-        area: "",
-        imagemPreviewUri: "",
-      };
-    }
-  }, [mode]);
+    const loadPost = async () => {
+      if (!user || user.role !== "professor") {
+        Alert.alert("Acesso restrito", "Apenas professores podem criar ou editar postagens.");
+        navigation.navigate("Main");
+        return;
+      }
 
-  // Busca dados do post ao editar
-  useEffect(() => {
-    if (user && user.role !== "professor") {
-      Alert.alert("Acesso restrito", "Apenas professores podem criar ou editar postagens.");
-      navigation.navigate("Main");
-      return;
-    }
-    if (mode === "edit" && postId) {
-      initialSnapshotRef.current = null;
-      fetchPost(postId).then((post) => {
-        setTitulo(post.titulo);
-        setConteudo(post.conteudo);
-        setArea(post.areaDoConhecimento || "");
-        setImagemPreviewUri(post.imagem || "");
-        setImagemFile(null);
+      if (mode !== "edit" || !postId) {
+        initialSnapshotRef.current = {
+          titulo: "",
+          conteudo: "",
+          autoria: user?.nome || "",
+          area: AREA_OPTIONS[0],
+          imagem: null,
+        };
+        return;
+      }
+
+      setLoadingPostData(true);
+      try {
+        const post = await fetchPost(postId);
+        setTitulo(post.titulo || "");
+        setConteudo(post.conteudo || "");
+        setAutoria(post.autoria || user?.nome || "");
+        setArea(post.areaDoConhecimento || AREA_OPTIONS[0]);
+        setPreviewUri(post.imagem || null);
 
         initialSnapshotRef.current = {
           titulo: post.titulo || "",
           conteudo: post.conteudo || "",
-          area: post.areaDoConhecimento || "",
-          imagemPreviewUri: post.imagem || "",
+          autoria: post.autoria || user?.nome || "",
+          area: post.areaDoConhecimento || AREA_OPTIONS[0],
+          imagem: post.imagem || null,
         };
-      });
-    }
+      } catch {
+        Alert.alert("Erro", "Não foi possível carregar a postagem para edição.");
+      } finally {
+        setLoadingPostData(false);
+      }
+    };
+
+    void loadPost();
   }, [mode, navigation, postId, user]);
 
   const hasUnsavedChanges = useMemo(() => {
     const snap = initialSnapshotRef.current;
     if (!snap) return false;
 
-    const textChanged =
+    return (
       titulo !== snap.titulo ||
       conteudo !== snap.conteudo ||
+      autoria !== snap.autoria ||
       area !== snap.area ||
-      imagemPreviewUri !== snap.imagemPreviewUri;
-
-    const pickedNewImage = Boolean(imagemFile);
-
-    return textChanged || pickedNewImage;
-  }, [area, conteudo, imagemFile, imagemPreviewUri, titulo]);
+      previewUri !== snap.imagem
+    );
+  }, [area, autoria, conteudo, previewUri, titulo]);
 
   useUnsavedChangesGuard({
     navigation,
@@ -115,77 +117,45 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
     allowExitWithoutPromptRef,
   });
 
-  const handlePickImage = async () => {
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert("Permissão necessária", "Precisamos de acesso à galeria para selecionar a imagem.");
-        return;
-      }
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+      aspect: [16, 9],
+    });
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.85,
-      });
+    if (result.canceled) return;
 
-      if (result.canceled) return;
+    const asset = result.assets[0];
+    const ext = asset.uri.split(".").pop()?.toLowerCase() || "jpg";
+    const type = ext === "png" ? "image/png" : "image/jpeg";
 
-      const asset = result.assets?.[0];
-      if (!asset?.uri) return;
-
-      const uri = asset.uri;
-      const nameFromUri = uri.split("/").pop() || "imagem.jpg";
-      const type = (asset as any)?.mimeType || "image/jpeg";
-
-      setImagemPreviewUri(uri);
-      setImagemFile({ uri, name: nameFromUri, type });
-    } catch (e) {
-      Alert.alert("Erro", "Não foi possível selecionar a imagem.");
-    }
+    setPreviewUri(asset.uri);
+    setImagem({
+      uri: asset.uri,
+      name: `post-image.${ext}`,
+      type,
+    });
   };
-
-  if (!user || user.role !== "professor") {
-    return (
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-        <Text style={styles.title}>Acesso restrito</Text>
-        <Text>Somente professores podem criar ou editar postagens.</Text>
-      </ScrollView>
-    );
-  }
 
   const handleSubmit = async () => {
     if (!user || user.role !== "professor") return;
-    const tituloOk = Boolean(titulo?.trim());
-    const conteudoOk = Boolean(conteudo?.trim());
-    const areaOk = Boolean(area?.trim());
-    const imagemOk = Boolean(imagemFile) || Boolean(imagemPreviewUri?.trim());
+    if (!titulo.trim() || !conteudo.trim() || !autoria.trim()) {
+      Alert.alert("Atenção", "Preencha título, conteúdo e autor.");
+      return;
+    }
 
-    if (!imagemOk) {
-      Alert.alert("Atenção", "Selecione uma imagem.");
-      return;
-    }
-    if (!tituloOk) {
-      Alert.alert("Atenção", "Preencha o título.");
-      return;
-    }
-    if (!conteudoOk) {
-      Alert.alert("Atenção", "Preencha o conteúdo.");
-      return;
-    }
-    if (!areaOk) {
-      Alert.alert("Atenção", "Selecione a área do conhecimento.");
-      return;
-    }
     setLoading(true);
     try {
       const payload = {
-        titulo,
-        conteudo,
-        autoria: user.nome,
-        areaDoConhecimento: area || undefined,
-        imagem: imagemFile,
+        titulo: titulo.trim(),
+        conteudo: conteudo.trim(),
+        autoria: autoria.trim(),
+        areaDoConhecimento: area,
+        imagem,
       };
+
       if (mode === "edit" && postId) {
         await updatePost(postId, payload);
         toast.show("Post atualizado com sucesso.", { variant: "success" });
@@ -208,105 +178,97 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
 
       allowExitWithoutPromptRef.current = true;
       navigation.goBack();
-    } catch (error) {
-      Alert.alert("Erro", "Não foi possível salvar a postagem.");
+    } catch {
+      Alert.alert("Erro", "Não foi possível enviar a postagem ao servidor.");
     } finally {
       setLoading(false);
     }
   };
 
+  if (!user || user.role !== "professor") {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+        <Text style={styles.title}>Acesso restrito</Text>
+        <Text>Somente professores podem criar ou editar postagens.</Text>
+      </ScrollView>
+    );
+  }
+
+  if (mode === "edit" && loadingPostData) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Carregando dados da postagem...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text style={styles.title}>{mode === "edit" ? "Editar Postagem" : "Nova Postagem"}</Text>
+      <Text style={styles.title}>{mode === "edit" ? "Editar Postagem" : "Criar Postagem"}</Text>
       <View style={styles.card}>
-        <View style={styles.imageSection}>
-          <Text style={styles.dropdownLabel}>Imagem *</Text>
-          {!!imagemPreviewUri && (
-            <View style={styles.imagePreviewWrap}>
-              <Image source={{ uri: imagemPreviewUri }} style={styles.imagePreview} resizeMode="cover" />
-            </View>
-          )}
-
-          <View style={[styles.imageRow, !!imagemPreviewUri && styles.imageRowBelowPreview]}>
-            <AppButton
-              title={imagemPreviewUri ? "Trocar imagem" : "Selecionar imagem"}
-              onPress={handlePickImage}
-              variant="secondary"
-            />
-            {!!imagemPreviewUri && (
-              <Pressable
-                onPress={() => {
-                  setImagemPreviewUri("");
-                  setImagemFile(null);
-                }}
-                style={styles.clearImageBtn}
-              >
-                <Ionicons name="close-circle-outline" size={20} color={colors.muted} />
-                <Text style={styles.clearImageText}>Remover</Text>
-              </Pressable>
-            )}
-          </View>
-        </View>
-
         <AppInput label="Título *" value={titulo} onChangeText={setTitulo} placeholder="Digite o título" />
-        <AppInput
-          label="Conteúdo *"
-          value={conteudo}
-          onChangeText={setConteudo}
-          multiline
-          placeholder="Escreva o conteúdo da postagem"
-        />
+        <AppInput label="Conteúdo *" value={conteudo} onChangeText={setConteudo} multiline placeholder="Escreva o conteúdo" />
+        <AppInput label="Autor *" value={autoria} onChangeText={setAutoria} placeholder="Nome do autor" />
 
         <View style={styles.dropdownWrapper}>
-          <Text style={styles.dropdownLabel}>Área do conhecimento *</Text>
-          <Pressable
-            onPress={() => setAreaPickerOpen(true)}
-            style={styles.dropdownContainer}
-            accessibilityRole="button"
-            accessibilityLabel="Selecionar área do conhecimento"
-          >
-            <Text style={[styles.dropdownValue, !area && styles.dropdownPlaceholder]} numberOfLines={1}>
-              {area || "Selecione uma área"}
-            </Text>
-            <Ionicons name="chevron-down-outline" size={18} color={colors.muted} />
+          <Text style={styles.dropdownLabel}>Área do conhecimento</Text>
+          <Pressable style={styles.dropdownContainer} onPress={() => setAreaPickerOpen(true)}>
+            <Text style={styles.dropdownValue}>{area}</Text>
+            <Ionicons name="chevron-down" size={18} color={colors.muted} />
           </Pressable>
         </View>
 
-        <AppInput
-          label="Autor"
-          value={autoria}
-          onChangeText={setAutoria}
-          placeholder="Nome do autor"
-          editable={false}
-          inputStyle={{ fontStyle: "italic", color: colors.muted }}
+        <View style={styles.imageSection}>
+          <View style={styles.imageRow}>
+            <Text style={styles.dropdownLabel}>Imagem de capa (opcional)</Text>
+            <AppButton title="Escolher imagem" size="sm" variant="secondary" onPress={pickImage} disabled={loading} />
+          </View>
+
+          {previewUri && (
+            <View style={styles.imagePreviewWrap}>
+              <Image source={{ uri: previewUri }} style={styles.imagePreview} resizeMode="cover" />
+              <View style={[styles.imageRow, styles.imageRowBelowPreview]}>
+                <View />
+                <Pressable
+                  style={styles.clearImageBtn}
+                  onPress={() => {
+                    setImagem(null);
+                    setPreviewUri(null);
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={16} color={colors.muted} />
+                  <Text style={styles.clearImageText}>Remover imagem</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <AppButton
+          title={loading ? "Salvando..." : mode === "edit" ? "Salvar alterações" : "Salvar"}
+          onPress={handleSubmit}
+          disabled={loading || loadingPostData}
         />
-        <AppButton title={loading ? "Salvando..." : "Salvar"} onPress={handleSubmit} disabled={loading} />
       </View>
 
-      <Modal
-        visible={areaPickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setAreaPickerOpen(false)}
-      >
+      <Modal visible={areaPickerOpen} transparent animationType="fade" onRequestClose={() => setAreaPickerOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setAreaPickerOpen(false)}>
           <Pressable style={styles.modalCard} onPress={() => null}>
             <Text style={styles.modalTitle}>Selecione a área</Text>
-            {AREAS_CONHECIMENTO.map((opt) => {
-              const active = opt === area;
+            {AREA_OPTIONS.map((item) => {
+              const active = item === area;
               return (
                 <Pressable
-                  key={opt}
+                  key={item}
+                  style={[styles.modalOption, active && styles.modalOptionActive]}
                   onPress={() => {
-                    setArea(opt);
+                    setArea(item);
                     setAreaPickerOpen(false);
                   }}
-                  style={[styles.modalOption, active && styles.modalOptionActive]}
                 >
-                  <Text style={[styles.modalOptionText, active && styles.modalOptionTextActive]}>
-                    {opt}
-                  </Text>
-                  {active && <Ionicons name="checkmark-outline" size={18} color={colors.secondary} />}
+                  <Text style={[styles.modalOptionText, active && styles.modalOptionTextActive]}>{item}</Text>
+                  {active && <Ionicons name="checkmark" size={18} color={colors.secondary} />}
                 </Pressable>
               );
             })}
@@ -318,17 +280,8 @@ const PostFormScreen: React.FC<{ route: any; navigation: any }> = ({ route, navi
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: colors.background,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 16,
-    color: colors.text,
-  },
+  container: { flex: 1, padding: 20, backgroundColor: colors.background },
+  title: { fontSize: 22, fontWeight: "700", marginBottom: 16, color: colors.text },
   card: {
     backgroundColor: colors.white,
     borderRadius: 16,
@@ -341,14 +294,8 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2,
   },
-  dropdownWrapper: {
-    marginBottom: 16,
-  },
-  dropdownLabel: {
-    color: colors.text,
-    fontWeight: "600",
-    marginBottom: 6,
-  },
+  dropdownWrapper: { marginBottom: 16 },
+  dropdownLabel: { color: colors.text, fontWeight: "600", marginBottom: 6 },
   dropdownContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -360,21 +307,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
-  dropdownValue: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 15,
-    marginRight: 10,
-  },
-  dropdownPlaceholder: {
-    color: colors.muted,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    padding: 20,
-    justifyContent: "center",
-  },
+  dropdownValue: { flex: 1, color: colors.text, fontSize: 15, marginRight: 10 },
+  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", padding: 20, justifyContent: "center" },
   modalCard: {
     backgroundColor: colors.white,
     borderRadius: 14,
@@ -382,12 +316,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 12,
-  },
+  modalTitle: { fontSize: 16, fontWeight: "700", color: colors.text, marginBottom: 12 },
   modalOption: {
     flexDirection: "row",
     alignItems: "center",
@@ -396,39 +325,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 10,
   },
-  modalOptionActive: {
-    backgroundColor: "rgba(124, 77, 190, 0.10)",
-  },
-  modalOptionText: {
-    color: colors.text,
-    fontWeight: "600",
-  },
-  modalOptionTextActive: {
-    color: colors.secondary,
-  },
-  imageSection: {
-    marginBottom: 16,
-  },
-  imageRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  imageRowBelowPreview: {
-    marginTop: 12,
-  },
-  clearImageBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 6,
-  },
-  clearImageText: {
-    color: colors.muted,
-    fontWeight: "700",
-  },
+  modalOptionActive: { backgroundColor: "rgba(124, 77, 190, 0.10)" },
+  modalOptionText: { color: colors.text, fontWeight: "600" },
+  modalOptionTextActive: { color: colors.secondary },
+  imageSection: { marginBottom: 16 },
+  imageRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  imageRowBelowPreview: { marginTop: 12 },
+  clearImageBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 6, paddingVertical: 6 },
+  clearImageText: { color: colors.muted, fontWeight: "700" },
   imagePreviewWrap: {
     marginTop: 10,
     borderRadius: 12,
@@ -437,10 +341,16 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.background,
   },
-  imagePreview: {
-    width: "100%",
-    height: 160,
+  imagePreview: { width: "100%", height: 160 },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+    gap: 10,
+    padding: 20,
   },
+  loadingText: { color: colors.muted, fontWeight: "600" },
 });
 
 export default PostFormScreen;

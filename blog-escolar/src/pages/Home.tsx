@@ -15,7 +15,6 @@ import "../styles/center.css";
 const AREAS_CONHECIMENTO = [
   "Linguagens", "Matemática", "Ciências da Natureza", "Ciências Humanas", "Tecnologias"
 ];
-// ...existing code...st } from "../services/postService";
 
 export const Home: React.FC = () => {
   const { user } = useAuth();
@@ -76,8 +75,8 @@ export const Home: React.FC = () => {
   };
 
   const postsOrdenados = [...posts].sort((a: Post, b: Post) => {
-    const tsA = toTimestampBR(a.AtualizadoEm, (a as any).AtualizadoEmHora) || toTimestampBR(a.CriadoEm, (a as any).CriadoEmHora);
-    const tsB = toTimestampBR(b.AtualizadoEm, (b as any).AtualizadoEmHora) || toTimestampBR(b.CriadoEm, (b as any).CriadoEmHora);
+    const tsA = toTimestampBR(a.AtualizadoEm, a.AtualizadoEmHora) || toTimestampBR(a.CriadoEm, a.CriadoEmHora);
+    const tsB = toTimestampBR(b.AtualizadoEm, b.AtualizadoEmHora) || toTimestampBR(b.CriadoEm, b.CriadoEmHora);
     return tsB - tsA;
   });
 
@@ -225,7 +224,12 @@ export const Home: React.FC = () => {
       {/* Nome do usuário e botão de login/logout agora estão na barra de acessibilidade */}
       <h1 className="titulo-principal" style={{ color: '#7c4dbe', textAlign: 'center', width: '100%' }}>Entre linhas e ideias</h1>
       {user?.role === "professor" && (
-        <div style={{ width: "100%", display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ width: "100%", display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 16, gap: 10, flexWrap: "wrap" }}>
+          <Link to="/professores">
+            <button style={{ padding: "8px 20px", borderRadius: 8, background: "#7c4dbe", color: "#fff", border: "none", cursor: "pointer", fontWeight: 600 }}>
+              Listagem de professores
+            </button>
+          </Link>
           <Link to="/gerenciamentodepostagens">
             <button style={{ padding: "8px 20px", borderRadius: 8, background: "#4dbec7", color: "#fff", border: "none", cursor: "pointer", fontWeight: 600 }}>
               Gerenciamento de postagens

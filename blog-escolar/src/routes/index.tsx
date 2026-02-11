@@ -12,6 +12,8 @@ import NotFound from '../pages/NotFound';
 import PostRead from '../pages/PostRead';
 import PostCreate from '../pages/PostCreate';
 import PostEdit from '../pages/PostEdit';
+import ProfessoresListagem from '../pages/ProfessoresListagem';
+import ProfessorEdicao from '../pages/ProfessorEdicao';
 // import Admin from '../pages/Admin';
 // import Post from '../pages/Post';
 
@@ -49,6 +51,16 @@ const AppRoutes: React.FC = () => {
       <Route path="/admin" element={
         <ProtectedRoute>
           <GerenciarPostagens />
+        </ProtectedRoute>
+      } />
+      <Route path="/professores" element={
+        <ProtectedRoute>
+          <ProfessoresListagem />
+        </ProtectedRoute>
+      } />
+      <Route path="/professores/editar/:id" element={
+        <ProtectedRoute>
+          <ProfessorEdicao />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />

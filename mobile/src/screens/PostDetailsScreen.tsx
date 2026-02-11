@@ -22,6 +22,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
   const [comments, setComments] = useState<Array<{ id: string; author: string; message: string; createdAt: string }>>(
     []
   );
+  const [commentsAvailable, setCommentsAvailable] = useState(true);
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentMessage, setCommentMessage] = useState("");
   const [didAutoScroll, setDidAutoScroll] = useState(false);
@@ -106,8 +107,10 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     try {
       const list = await fetchComments(postId);
       setComments(list.map((c) => ({ id: c.id, author: c.author, message: c.message, createdAt: c.createdAt })));
+      setCommentsAvailable(true);
     } catch (e) {
-      // Comentários são "extra"; não bloqueia a leitura do post
+      // Comentários são opcionais; se a API não estiver disponível, mantém só a leitura do post.
+      setCommentsAvailable(false);
     } finally {
       setLoadingComments(false);
     }
@@ -135,6 +138,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
 
   // Função para adicionar novo comentário
   const handleAddComment = async () => {
+    if (!commentsAvailable) return;
     const texto = commentMessage.trim();
     const autor = commentAuthor.trim();
     if (!texto) return;
@@ -231,43 +235,49 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
           setCommentsLayoutY(e.nativeEvent.layout.y);
         }}
       >
-        <Text style={styles.sectionTitle}>Comentários</Text>
+        <Text style={styles.sectionTitle}>Comentários {commentsAvailable ? "" : "(opcional)"}</Text>
 
-        {/* Campo para nome do autor do comentário */}
-        <AppInput
-          value={commentAuthor}
-          onChangeText={setCommentAuthor}
-          placeholder="Seu nome (opcional)"
-          variant="soft"
-          density="compact"
-          containerStyle={{ marginBottom: 10 }}
-        />
-        {/* Campo para mensagem do comentário */}
-        <AppInput
-          value={commentMessage}
-          onChangeText={setCommentMessage}
-          placeholder="Digite seu comentário"
-          multiline
-          variant="soft"
-          density="compact"
-          containerStyle={{ marginBottom: 10 }}
-        />
-        {/* Botão para enviar comentário */}
-        <AppButton title={loadingComments ? "Carregando..." : "Enviar comentário"} onPress={handleAddComment} />
-
-        {/* Mensagem de carregamento ou lista de comentários */}
-        {loadingComments && <Text style={styles.emptyText}>Carregando comentários...</Text>}
-
-        {!loadingComments && comments.length === 0 ? (
-          <Text style={styles.emptyText}>Ainda não há comentários.</Text>
+        {!commentsAvailable ? (
+          <Text style={styles.emptyText}>Comentários indisponíveis no momento. Continue a leitura 😊</Text>
         ) : (
-          comments.map((comment) => (
-            <View key={comment.id} style={styles.commentCard}>
-              <Text style={styles.commentAuthor}>{comment.author}</Text>
-              <Text style={styles.commentDate}>{comment.createdAt}</Text>
-              <Text style={styles.commentMessage}>{comment.message}</Text>
-            </View>
-          ))
+          <>
+            <AppInput
+              value={commentAuthor}
+              onChangeText={setCommentAuthor}
+              placeholder="Seu nome (opcional)"
+              variant="soft"
+              density="compact"
+              containerStyle={{ marginBottom: 10 }}
+            />
+            <AppInput
+              value={commentMessage}
+              onChangeText={setCommentMessage}
+              placeholder="Digite seu comentário"
+              multiline
+              variant="soft"
+              density="compact"
+              containerStyle={{ marginBottom: 10 }}
+            />
+            <AppButton
+              title={loadingComments ? "Carregando..." : "Enviar comentário"}
+              onPress={handleAddComment}
+              disabled={!commentMessage.trim()}
+            />
+
+            {loadingComments && <Text style={styles.emptyText}>Carregando comentários...</Text>}
+
+            {!loadingComments && comments.length === 0 ? (
+              <Text style={styles.emptyText}>Ainda não há comentários.</Text>
+            ) : (
+              comments.map((comment) => (
+                <View key={comment.id} style={styles.commentCard}>
+                  <Text style={styles.commentAuthor}>{comment.author}</Text>
+                  <Text style={styles.commentDate}>{comment.createdAt}</Text>
+                  <Text style={styles.commentMessage}>{comment.message}</Text>
+                </View>
+              ))
+            )}
+          </>
         )}
       </View>
     </ScrollView>

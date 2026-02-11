@@ -23,14 +23,15 @@ type LoginRole = "professor" | "aluno";
 
 // Componente principal da tela de login
 const LoginScreen: React.FC = () => {
-  // Autenticação e navegação
-  const { login, continueAsStudent, logout, user } = useAuth();
+  const { login, logout, user, continueAsStudent } = useAuth();
   const navigation = useNavigation<any>();
 
   // Estados para perfil, email, senha e carregamento
   const [selectedRole, setSelectedRole] = useState<LoginRole | null>(null);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [nomeAluno, setNomeAluno] = useState("");
+  const [rmAluno, setRmAluno] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Estados para modal de primeiro acesso
@@ -38,8 +39,6 @@ const LoginScreen: React.FC = () => {
   const [firstAccessEmail, setFirstAccessEmail] = useState("");
   const [firstAccessSenha, setFirstAccessSenha] = useState("");
   const [firstAccessConfirm, setFirstAccessConfirm] = useState("");
-  const [studentNome, setStudentNome] = useState("");
-  const [studentRm, setStudentRm] = useState("");
 
   // Função para login
   const handleLogin = async () => {
@@ -52,16 +51,42 @@ const LoginScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      await login(emailTrim, senha);
+      const { user: loggedUser } = await login(emailTrim, senha);
+
+      if (loggedUser.role !== "professor") {
+        await logout();
+        Alert.alert("Acesso restrito", "Use a opção de aluno para entrar como estudante.");
+        return;
+      }
+
       navigation.reset({ index: 0, routes: [{ name: "Main" }] });
-    } catch (error) {
+    } catch {
       Alert.alert("Erro", "Não foi possível entrar. Verifique suas credenciais.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Funções para abrir e fechar modal de primeiro acesso
+  const handleStudentLogin = useCallback(async () => {
+    const nomeTrim = nomeAluno.trim();
+    const rmTrim = rmAluno.trim();
+
+    if (!nomeTrim || !rmTrim) {
+      Alert.alert("Atenção", "Informe nome e RM do aluno.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await continueAsStudent(nomeTrim, rmTrim);
+      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+    } catch {
+      Alert.alert("Erro", "Não foi possível entrar como aluno. Verifique os dados informados.");
+    } finally {
+      setLoading(false);
+    }
+  }, [continueAsStudent, navigation, nomeAluno, rmAluno]);
+
   const openFirstAccessModal = useCallback(() => {
     setFirstAccessEmail(email.trim());
     setFirstAccessSenha("");
@@ -76,65 +101,44 @@ const LoginScreen: React.FC = () => {
   // Função para primeiro acesso
   const handleFirstAccess = useCallback(async () => {
     const emailTrim = firstAccessEmail.trim();
-    const senhaTrim = firstAccessSenha;
-    const confirmTrim = firstAccessConfirm;
 
-    if (!emailTrim || !senhaTrim) {
+    if (!emailTrim || !firstAccessSenha) {
       Alert.alert("Atenção", "Informe email e a nova senha.");
       return;
     }
 
-    if (senhaTrim.length < 6) {
+    if (firstAccessSenha.length < 6) {
       Alert.alert("Atenção", "A senha deve ter pelo menos 6 caracteres.");
       return;
     }
 
-    if (senhaTrim !== confirmTrim) {
+    if (firstAccessSenha !== firstAccessConfirm) {
       Alert.alert("Atenção", "As senhas não conferem.");
       return;
     }
 
     setLoading(true);
     try {
-      const { firstAccess } = await login(emailTrim, senhaTrim);
+      const { user: loggedUser, firstAccess } = await login(emailTrim, firstAccessSenha);
       closeFirstAccessModal();
+
+      if (loggedUser.role !== "professor") {
+        await logout();
+        Alert.alert("Acesso restrito", "Use a opção de aluno para entrar como estudante.");
+        return;
+      }
 
       if (firstAccess) {
         Alert.alert("Sucesso", "Senha criada no primeiro acesso. Você já está logado.");
       }
 
       navigation.reset({ index: 0, routes: [{ name: "Main" }] });
-    } catch (error) {
+    } catch {
       Alert.alert("Erro", "Não foi possível criar a senha. Verifique o email informado.");
     } finally {
       setLoading(false);
     }
-  }, [closeFirstAccessModal, firstAccessConfirm, firstAccessEmail, firstAccessSenha, login, navigation]);
-
-  const handleContinueAsStudent = useCallback(async () => {
-    const nomeTrim = studentNome.trim();
-    const rmTrim = studentRm.trim();
-
-    if (!nomeTrim) {
-      Alert.alert("Atenção", "Informe o nome completo do aluno.");
-      return;
-    }
-
-    if (!rmTrim) {
-      Alert.alert("Atenção", "Informe o RM do aluno.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await continueAsStudent(nomeTrim, rmTrim);
-      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
-    } catch (error) {
-      Alert.alert("Erro", "Aluno não encontrado. Verifique se o RM e o nome estão cadastrados.");
-    } finally {
-      setLoading(false);
-    }
-  }, [continueAsStudent, navigation, studentNome, studentRm]);
+  }, [closeFirstAccessModal, firstAccessConfirm, firstAccessEmail, firstAccessSenha, login, logout, navigation]);
 
   const handleBackToRoleSelection = useCallback(() => {
     setSelectedRole(null);
@@ -158,16 +162,13 @@ const LoginScreen: React.FC = () => {
   const getUserLabel = () => {
     if (!user) return "";
     const roleLabel = user.role === "professor" ? "Professor" : "Aluno";
-    const ident = user.nome || user.email || "usuário";
+    const ident = user.nome || user.email || user.rm || "usuário";
     return `${roleLabel}: ${ident}`;
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboard}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboard}>
         <View style={styles.page}>
           <ScrollView
             style={styles.scroll}
@@ -177,7 +178,7 @@ const LoginScreen: React.FC = () => {
             <View>
               <View style={styles.header}>
                 <Text style={styles.title}>Blog Escolar</Text>
-                <Text style={styles.subtitle}>Escolha como deseja entrar</Text>
+                <Text style={styles.subtitle}>Acesso para professores e alunos</Text>
               </View>
               <View style={styles.card}>
                 {selectedRole === null && (
@@ -203,13 +204,7 @@ const LoginScreen: React.FC = () => {
                       </>
                     )}
 
-                    <AppButton
-                      title="Sou professor"
-                      onPress={() => setSelectedRole("professor")}
-                      disabled={loading}
-                      variant="primary"
-                    />
-
+                    <AppButton title="Sou professor" onPress={() => setSelectedRole("professor")} disabled={loading} />
                     <View style={styles.spacer} />
                     <AppButton
                       title="Sou aluno"
@@ -245,11 +240,7 @@ const LoginScreen: React.FC = () => {
                       autoCorrect={false}
                       textContentType="password"
                     />
-                    <AppButton
-                      title={loading ? "Entrando..." : "Entrar"}
-                      onPress={handleLogin}
-                      disabled={loading}
-                    />
+                    <AppButton title={loading ? "Entrando..." : "Entrar"} onPress={handleLogin} disabled={loading} />
 
                     <View style={styles.spacer} />
                     <AppButton
@@ -267,30 +258,25 @@ const LoginScreen: React.FC = () => {
                     <Text style={styles.sectionSubtitle}>Entre com nome e RM.</Text>
 
                     <AppInput
-                      label="Nome completo"
-                      value={studentNome}
-                      onChangeText={setStudentNome}
+                      label="Nome"
+                      value={nomeAluno}
+                      onChangeText={setNomeAluno}
                       placeholder="Seu nome completo"
                       autoCapitalize="words"
-                      autoCorrect={false}
-                      textContentType="name"
                     />
-
                     <AppInput
                       label="RM"
-                      value={studentRm}
-                      onChangeText={setStudentRm}
-                      placeholder="000000"
+                      value={rmAluno}
+                      onChangeText={setRmAluno}
+                      placeholder="Seu RM"
                       keyboardType="numeric"
                       autoCapitalize="none"
-                      autoCorrect={false}
-                      textContentType="none"
                     />
-
                     <AppButton
-                      title={loading ? "Entrando..." : "Entrar"}
-                      onPress={handleContinueAsStudent}
+                      title={loading ? "Entrando..." : "Entrar como aluno"}
+                      onPress={handleStudentLogin}
                       disabled={loading}
+                      variant="primary"
                     />
                   </>
                 )}
@@ -300,12 +286,7 @@ const LoginScreen: React.FC = () => {
 
           {selectedRole !== null && (
             <View style={styles.footer}>
-              <AppButton
-                title="Voltar"
-                onPress={handleBackToRoleSelection}
-                disabled={loading}
-                variant="secondary"
-              />
+              <AppButton title="Voltar" onPress={handleBackToRoleSelection} disabled={loading} variant="secondary" />
             </View>
           )}
         </View>
@@ -358,7 +339,6 @@ const LoginScreen: React.FC = () => {
                 <AppButton
                   title={loading ? "Salvando..." : "Criar e entrar"}
                   onPress={handleFirstAccess}
-                  variant="primary"
                   size="sm"
                   disabled={loading}
                 />
@@ -386,14 +366,11 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-  },
   scrollContentCentered: {
     flexGrow: 1,
     justifyContent: "center",
     paddingTop: 64,
-    paddingBottom: 160, // Sobe mais o conteúdo
+    paddingBottom: 160,
   },
   footer: {
     paddingTop: 12,
@@ -435,8 +412,6 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     opacity: 0.8,
   },
-
-
   sectionTitle: {
     fontSize: 16,
     fontWeight: "800",
@@ -448,7 +423,6 @@ const styles = StyleSheet.create({
     color: colors.muted,
     marginBottom: 12,
   },
-
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",
