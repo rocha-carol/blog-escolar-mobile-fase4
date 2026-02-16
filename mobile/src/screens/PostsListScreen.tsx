@@ -79,7 +79,7 @@ const PostsListScreen: React.FC = () => {
     try {
       const response = await fetchPosts({ termo: search, page: pageNumber, limit: POSTS_PER_PAGE });
       const basePosts = (response.items ?? []).slice();
-      basePosts.sort((a, b) => getTimestamp(b) - getTimestamp(a));
+      // Removida a ordenação no frontend para confiar na ordenação do backend
       const filtered = selectedArea ? basePosts.filter((item) => item.areaDoConhecimento === selectedArea) : basePosts;
       setPosts(filtered);
       setHasMore(Boolean(response.hasMore));

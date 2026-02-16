@@ -149,18 +149,9 @@ const AdminPostsScreen: React.FC = () => {
       return titulo.includes(q) || conteudo.includes(q) || area.includes(q);
       });
 
-    // Ordena do mais recente para o mais antigo
-    return [...base].sort((a, b) => {
-      const ta =
-        toTimestamp(a.AtualizadoEm, a.AtualizadoEmHora) ||
-        toTimestamp(a.CriadoEm, a.CriadoEmHora);
-      const tb =
-        toTimestamp(b.AtualizadoEm, b.AtualizadoEmHora) ||
-        toTimestamp(b.CriadoEm, b.CriadoEmHora);
-      if (tb !== ta) return tb - ta;
-      return (b.titulo ?? "").localeCompare(a.titulo ?? "");
-    });
-  }, [posts, termo]);
+    // Removida a ordenação no frontend para confiar na ordenação do backend
+    return base;
+  }, [termo, posts]);
 
   const handleDelete = (postId: string) => {
     Alert.alert("Excluir", "Deseja remover esta postagem?", [

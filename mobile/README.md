@@ -140,7 +140,7 @@ A navegação combina:
 
 Comportamento por perfil:
 
-- **Professor** vê abas de Posts + Admin + Professores.
+- **Professor** vê abas de Posts + Gerenciamento de posts + Gerenciamento de usuários.
 - **Aluno** vê abas de Posts + Alunos.
 
 As rotas privadas só são registradas quando existe usuário autenticado.
@@ -229,7 +229,7 @@ Para professores:
 
 1. Inicie backend e mobile.
 2. Abra o app e escolha o perfil.
-3. Faça login (professor) ou entre como aluno (nome + RM).
+3. Faça login professor (email+senha) ou entre como aluno (nome + RM).
 4. Navegue pelos posts na aba inicial.
 5. Abra um post para leitura completa e comentários.
 6. Se for professor, acesse abas administrativas para gerenciar posts e usuários.
@@ -268,4 +268,3 @@ Para evitar erro de conexão:
 - incluir testes automatizados (unitários/integrados),
 - suportar refresh token e expiração de sessão,
 - adicionar monitoramento de erros e métricas de uso.
-

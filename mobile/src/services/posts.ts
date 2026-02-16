@@ -18,7 +18,7 @@ function normalizePost(raw: any): Post {
     areaDoConhecimento: raw?.areaDoConhecimento,
     autoria: raw?.autoria ?? raw?.autor,
     imagem: raw?.imagem,
-    CriadoEm: raw?.CriadoEm ?? raw?.["criado em"],
+    CriadoEm: raw?.CriadoEm ?? raw?.["Publicado em"] ?? raw?.createdAt,
     AtualizadoEm: raw?.AtualizadoEm ?? raw?.atualizadoEm,
     CriadoEmHora: raw?.CriadoEmHora,
     AtualizadoEmHora: raw?.AtualizadoEmHora,
