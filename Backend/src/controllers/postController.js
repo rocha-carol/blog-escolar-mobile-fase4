@@ -57,6 +57,15 @@ class PostsController {
       if (req.query.autor) {
         filtro = { autoria: req.query.autor };
       }
+      // Filtro por termo de busca
+      if (req.query.termo) {
+        const regex = new RegExp(req.query.termo, 'i');
+        filtro.$or = [
+          { titulo: regex },
+          { conteudo: regex },
+          { areaDoConhecimento: regex }
+        ];
+      }
 
       const total = await Posts.countDocuments(filtro);
       const query = Posts.find(filtro)
