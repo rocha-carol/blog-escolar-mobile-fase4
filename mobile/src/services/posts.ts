@@ -38,12 +38,12 @@ export async function fetchPosts(params?: {
   if (params?.limit) searchParams.set("limit", String(params.limit));
 
   // Busca por termo livre
-  if (params?.termo) searchParams.set("q", params.termo);
+  if (params?.termo) searchParams.set("termo", params.termo);
 
   // Filtro por autor
   if (params?.autor) searchParams.set("autor", params.autor);
 
-  const url = params?.termo ? `/posts/search?${searchParams.toString()}` : `/posts?${searchParams.toString()}`;
+  const url = `/posts?${searchParams.toString()}`;
   const response = await api.get(url);
   const data = response.data;
 

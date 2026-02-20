@@ -114,9 +114,12 @@ const PostsListScreen: React.FC = () => {
   // Ao voltar da leitura (onde comentários podem ser criados), atualiza o feed para refletir a nova contagem.
   useFocusEffect(
     useCallback(() => {
-      const area = !debouncedTermo && page > 1 ? null : areaSelecionada;
-      loadPosts(debouncedTermo, area, page);
-    }, [debouncedTermo, areaSelecionada, page, loadPosts])
+      // Limpa busca e filtro de área ao focar na aba Início
+      setTermo("");
+      setAreaSelecionada(null);
+      setPage(1);
+      loadPosts("", null, 1);
+    }, [loadPosts])
   );
 
   const isSearching = debouncedTermo.length > 0;
