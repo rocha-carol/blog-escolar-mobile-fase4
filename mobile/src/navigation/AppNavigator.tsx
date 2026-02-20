@@ -84,8 +84,6 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        // A tela inicial do app deve ser a escolha de usuário.
-        // Mesmo com sessão salva, o usuário pode optar por continuar ou trocar.
         initialRouteName="Login"
         screenOptions={{
           headerShown: true,

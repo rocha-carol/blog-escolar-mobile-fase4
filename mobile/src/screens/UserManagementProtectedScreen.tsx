@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -7,18 +8,21 @@ import AppButton from "../components/AppButton";
 import UsersListScreen from "./UsersListScreen";
 import type { UserRole } from "../types";
 
+// Componente principal para proteger área de gerenciamento de usuários
 const UserManagementProtectedScreen: React.FC = () => {
+  // Navegação e autenticação de gerenciamento
   const navigation = useNavigation<any>();
   const { isAuthorized, ensureAuthorized, resetAuthorization } = useManagementAuth();
   const [managedRole, setManagedRole] = useState<UserRole>("professor");
 
-  // Reset da autorização ao sair da aba para exigir senha novamente na próxima entrada.
+  // Reseta autorização ao sair da aba
   useEffect(() => {
     return () => {
       resetAuthorization();
     };
   }, [resetAuthorization]);
 
+  // Garante autorização ao entrar na tela
   useFocusEffect(
     useCallback(() => {
       let mounted = true;
@@ -37,6 +41,7 @@ const UserManagementProtectedScreen: React.FC = () => {
     }, [ensureAuthorized, isAuthorized, navigation])
   );
 
+  // Exibe mensagem se não estiver autorizado
   if (!isAuthorized) {
     return (
       <View style={styles.container}>
@@ -46,6 +51,7 @@ const UserManagementProtectedScreen: React.FC = () => {
     );
   }
 
+  // Renderiza área de gerenciamento de usuários
   return (
     <View style={styles.wrapper}>
       <View style={styles.roleSwitcher}>
@@ -72,6 +78,7 @@ const UserManagementProtectedScreen: React.FC = () => {
   );
 };
 
+// Estilos para cada parte da tela
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
@@ -107,4 +114,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Exporta o componente para ser usado em outras telas
 export default UserManagementProtectedScreen;

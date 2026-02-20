@@ -1,9 +1,13 @@
+// Importa o React e tipos do React Native para criar componentes e definir estilos
 import React from "react";
 import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 import { StyleSheet, Text, TextInput, View } from "react-native";
+// Importa ícones do pacote Expo
 import { Ionicons } from "@expo/vector-icons";
+// Importa as cores do tema do projeto
 import colors from "../theme/colors";
 
+// Define os tipos das propriedades que o componente pode receber
 type Props = {
   label?: string;
   value: string;
@@ -24,6 +28,7 @@ type Props = {
   inputStyle?: StyleProp<TextStyle>;
 };
 
+// Componente principal que representa um campo de entrada personalizado
 const AppInput: React.FC<Props> = ({
   label,
   value,
@@ -44,8 +49,11 @@ const AppInput: React.FC<Props> = ({
   inputStyle,
 }) => {
   return (
+    // Container principal do campo de entrada
     <View style={[styles.wrapper, containerStyle]}>
+      {/* Exibe o rótulo do campo, se existir */}
       {!!label?.trim() && <Text style={styles.label}>{label}</Text>}
+      {/* Container do campo de entrada e dos ícones */}
       <View
         style={[
           styles.inputContainer,
@@ -54,6 +62,7 @@ const AppInput: React.FC<Props> = ({
           multiline && styles.inputContainerMultiline,
         ]}
       >
+        {/* Ícone à esquerda, se definido */}
         {leftIconName && (
           <Ionicons
             name={leftIconName}
@@ -62,6 +71,7 @@ const AppInput: React.FC<Props> = ({
             style={[styles.leftIcon, density === "compact" && styles.iconCompact]}
           />
         )}
+        {/* Campo de texto para digitar informações */}
         <TextInput
           style={[
             styles.input,
@@ -82,6 +92,7 @@ const AppInput: React.FC<Props> = ({
           autoCorrect={autoCorrect}
           textContentType={textContentType}
         />
+        {/* Ícone à direita, se definido */}
         {rightIconName && (
           <Ionicons
             name={rightIconName}
@@ -95,6 +106,7 @@ const AppInput: React.FC<Props> = ({
   );
 };
 
+// Define os estilos usados no componente
 const styles = StyleSheet.create({
   wrapper: {
     marginBottom: 16,
@@ -162,4 +174,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Exporta o componente para ser usado em outros arquivos
 export default AppInput;

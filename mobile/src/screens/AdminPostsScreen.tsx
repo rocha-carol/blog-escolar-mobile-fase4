@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import AppButton from "../components/AppButton";
@@ -8,15 +9,19 @@ import type { Post } from "../types";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
 
+// Componente principal para administração de posts
 const AdminPostsScreen: React.FC = () => {
+  // Navegação, rota e autenticação
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { user } = useAuth();
+  // Estados para posts, carregamento e busca
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [termo, setTermo] = useState("");
   const lastHandledCreatedTokenRef = useRef<number | null>(null);
 
+  // Função para formatar datas
   const formatDateBR = (value?: string) => {
     if (!value) return "--";
     // Se já estiver no formato esperado (dd/MM/yyyy), mantém
@@ -27,6 +32,7 @@ const AdminPostsScreen: React.FC = () => {
     return parsed.toLocaleDateString("pt-BR");
   };
 
+  // Função para converter datas em timestamp
   const toTimestamp = (dateValue?: string, timeValue?: string) => {
     if (!dateValue) return 0;
 
@@ -54,6 +60,7 @@ const AdminPostsScreen: React.FC = () => {
     return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
   };
 
+  // Função para obter informações de publicação
   const getInfoDataPublicacao = (post: Post) => {
     const criado = post.CriadoEm;
     const atualizado = post.AtualizadoEm;
@@ -64,6 +71,7 @@ const AdminPostsScreen: React.FC = () => {
     return { label: "Publicado em", data: formatDateBR(criado) };
   };
 
+  // Verifica se usuário tem permissão para administrar
   useEffect(() => {
     if (user && user.role !== "professor") {
       Alert.alert("Acesso restrito", "Apenas professores podem administrar postagens.");
@@ -71,6 +79,7 @@ const AdminPostsScreen: React.FC = () => {
     }
   }, [navigation, user]);
 
+  // Função para buscar posts
   const loadPosts = useCallback(async (opts?: { merge?: boolean }) => {
     setLoading(true);
     try {
@@ -78,6 +87,7 @@ const AdminPostsScreen: React.FC = () => {
       const response = await fetchPosts({ autor: autor || undefined, page: 1, limit: 50 });
       const fetched = response.items ?? [];
       if (!opts?.merge) {
+        // Mantém a ordem atual (inclui inserção otimista no topo) e atualiza itens vindos do backend.
         setPosts(fetched);
         return;
       }
@@ -139,18 +149,9 @@ const AdminPostsScreen: React.FC = () => {
       return titulo.includes(q) || conteudo.includes(q) || area.includes(q);
       });
 
-    // Ordena do mais recente para o mais antigo
-    return [...base].sort((a, b) => {
-      const ta =
-        toTimestamp(a.AtualizadoEm, a.AtualizadoEmHora) ||
-        toTimestamp(a.CriadoEm, a.CriadoEmHora);
-      const tb =
-        toTimestamp(b.AtualizadoEm, b.AtualizadoEmHora) ||
-        toTimestamp(b.CriadoEm, b.CriadoEmHora);
-      if (tb !== ta) return tb - ta;
-      return (b.titulo ?? "").localeCompare(a.titulo ?? "");
-    });
-  }, [posts, termo]);
+    // Removida a ordenação no frontend para confiar na ordenação do backend
+    return base;
+  }, [termo, posts]);
 
   const handleDelete = (postId: string) => {
     Alert.alert("Excluir", "Deseja remover esta postagem?", [

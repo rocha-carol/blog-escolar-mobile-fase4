@@ -5,11 +5,23 @@
     "noEmit": true,
     "ignoreDeprecations": "6.0",
     "moduleResolution": "bundler",
+    "types": [
+      "node"
+    ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["App.tsx", "src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "**/node_modules/*"]
+  "include": [
+    "App.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/node_modules/*"
+  ]
 }

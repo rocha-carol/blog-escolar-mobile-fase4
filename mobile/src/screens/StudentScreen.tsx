@@ -1,19 +1,24 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import colors from "../theme/colors";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 
+// Componente principal para área do aluno
 const StudentScreen: React.FC = () => {
+  // Navegação e autenticação
   const navigation = useNavigation<any>();
   const { user } = useAuth();
 
+  // Redireciona se não estiver como aluno
   useEffect(() => {
     if (user && user.role !== "aluno") {
       navigation.navigate("Posts");
     }
   }, [navigation, user]);
 
+  // Exibe mensagem se não estiver como aluno
   if (!user || user.role !== "aluno") {
     return (
       <View style={styles.container}>
@@ -23,6 +28,7 @@ const StudentScreen: React.FC = () => {
     );
   }
 
+  // Renderiza área do aluno
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Área do Aluno</Text>
@@ -37,6 +43,7 @@ const StudentScreen: React.FC = () => {
   );
 };
 
+// Estilos para cada parte da tela
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -72,4 +79,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Exporta o componente para ser usado em outras telas
 export default StudentScreen;

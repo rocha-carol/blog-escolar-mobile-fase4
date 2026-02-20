@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,10 +7,13 @@ import AppButton from "../components/AppButton";
 import colors from "../theme/colors";
 import { useAuth } from "../contexts/AuthContext";
 
+// Componente principal da tela de conta do usuário
 const AccountScreen: React.FC = () => {
+  // Navegação e autenticação
   const navigation = useNavigation<any>();
   const { user, logout } = useAuth();
 
+  // Função para sair da conta
   const handleLogout = () => {
     Alert.alert("Sair", "Deseja encerrar sua sessão?", [
       { text: "Cancelar", style: "cancel" },
@@ -24,10 +28,12 @@ const AccountScreen: React.FC = () => {
     ]);
   };
 
+  // Função para ir para tela de login
   const handleLogin = () => {
     navigation.navigate("Login");
   };
 
+  // Renderiza a tela de conta
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
@@ -56,6 +62,7 @@ const AccountScreen: React.FC = () => {
   );
 };
 
+// Estilos para cada parte da tela
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -92,4 +99,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Exporta o componente para ser usado em outras telas
 export default AccountScreen;

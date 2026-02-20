@@ -1,158 +1,270 @@
 # Blog Escolar Mobile
 
-## Sumário
+Aplicativo mobile em **React Native + Expo** para consumo da API REST do projeto Blog Escolar.
 
-1. [Blog Escolar Mobile](#blog-escolar-mobile) — linha 1
-2. [Documentação técnica detalhada](#documentação-técnica-detalhada) — linha 6
-   - [Setup inicial](#setup-inicial) — linha 8
-   - [Arquitetura da aplicação](#arquitetura-da-aplicação) — linha 34
-   - [Guia de uso](#guia-de-uso) — linha 74
-   - [Funcionalidades implementadas](#funcionalidades-implementadas) — linha 109
-   - [Observações](#observações) — linha 117
-3. [Arquitetura do sistema](#arquitetura-do-sistema) — linha 120
-4. [Uso da aplicação](#uso-da-aplicação) — linha 134
-5. [Experiências e desafios](#experiências-e-desafios) — linha 143
+> Este documento centraliza a documentação técnica do módulo `mobile`: setup, arquitetura, fluxos de autenticação/autorização e guia de uso.
 
-## Documentação técnica detalhada
+---
 
-### Setup inicial
+## 1. Visão geral
 
-#### Pré-requisitos
+O app possui dois perfis principais:
 
-- Node.js (LTS)
+- **Professor(a)**: acesso completo para gestão de posts e usuários.
+- **Aluno(a)**: acesso de leitura e navegação de conteúdo.
+
+### Objetivo técnico
+
+- Reutilizar uma única base mobile para múltiplos perfis.
+- Integrar com backend REST via Axios.
+- Persistir sessão local com `AsyncStorage`.
+- Isolar responsabilidades entre navegação, serviços, contexto global e telas.
+
+---
+
+## 2. Stack e dependências principais
+
+- **Expo 50** + **React Native 0.73**
+- **TypeScript**
+- **React Navigation** (stack + bottom tabs)
+- **Axios** (cliente HTTP)
+- **AsyncStorage** (persistência local de sessão)
+- **Expo Google Fonts (Fredoka)**
+
+Scripts disponíveis (`mobile/package.json`):
+
+```bash
+npm run start    # Expo dev server
+npm run android  # abre emulador/dispositivo Android
+npm run ios      # abre simulador iOS (macOS)
+npm run web      # execução web via Expo
+```
+
+---
+
+## 3. Setup inicial
+
+## Pré-requisitos
+
+- Node.js LTS (recomendado 18+)
 - npm
-- Expo CLI (via `npx`)
-- Dispositivo físico com Expo Go **ou** emulador Android/iOS configurado
+- Expo CLI via `npx expo`
+- App **Expo Go** no celular ou emulador Android/iOS
+- Backend do projeto rodando (API REST)
 
-#### Instalação
+## Instalação
 
 ```bash
 cd mobile
 npm install
 ```
 
-#### Variáveis de ambiente
+## Configuração de ambiente
 
-A aplicação usa a variável `EXPO_PUBLIC_API_BASE_URL` para apontar para a API.
+A aplicação utiliza `EXPO_PUBLIC_API_BASE_URL` para definir a base da API.
+
+### Linux/macOS
 
 ```bash
 export EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
 ```
 
-> Em ambientes Windows, use `set` (cmd) ou `$env:EXPO_PUBLIC_API_BASE_URL=...` (PowerShell).
+### Windows (CMD)
 
-#### Execução
+```cmd
+set EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
+```
+
+### Windows (PowerShell)
+
+```powershell
+$env:EXPO_PUBLIC_API_BASE_URL="http://localhost:3000"
+```
+
+> Caso a variável não seja definida, o fallback padrão é `http://localhost:3000`.
+
+## Execução
 
 ```bash
 npm run start
 ```
 
-Isso abrirá o Expo DevTools. Em seguida:
+Com o Metro Bundler aberto:
 
-- Leia o QR Code no Expo Go, **ou**
-- Inicie o emulador pelo DevTools.
+- `a` → Android
+- `i` → iOS
+- `w` → Web
+- ou leia o QR Code no Expo Go
 
-### Arquitetura da aplicação
+### Observação importante para dispositivo físico
 
-A base do app segue a separação por responsabilidade, com telas, navegação, serviços e contexto de autenticação.
+Se estiver testando no celular, troque `localhost` pelo IP da máquina que está executando o backend (ex.: `http://192.168.0.10:3000`).
 
-#### Estrutura de diretórios
+---
 
-- `App.tsx`: ponto de entrada e bootstrap do app.
-- `src/contexts`: autenticação e persistência de sessão.
-- `src/navigation`: fluxo principal (stack + tabs).
-- `src/screens`: telas de posts, administração e usuários.
-- `src/services`: integração com a API REST.
-- `src/theme`: paleta de cores compartilhada.
+## 4. Estrutura de pastas
 
-#### Camadas principais
+```text
+mobile/
+├── App.tsx
+├── src/
+│   ├── components/   # componentes reutilizáveis (botão, input, logout)
+│   ├── contexts/     # estado global (auth, toasts, autorização de gestão)
+│   ├── hooks/        # hooks utilitários (ex.: proteção de alterações não salvas)
+│   ├── navigation/   # rotas stack/tabs
+│   ├── screens/      # telas de UI e fluxos do app
+│   ├── services/     # integração com API REST
+│   ├── theme/        # tokens de design (cores)
+│   └── types.ts      # tipagens compartilhadas
+└── README.md
+```
 
-1. **UI (telas)**
-   - Telas de listagem, leitura e manutenção de posts.
-   - Telas administrativas para gerenciamento de usuários.
+---
 
-2. **Navegação**
-   - Stack navigation para fluxos de detalhes.
-   - Tabs para as áreas principais do app.
+## 5. Arquitetura técnica
 
-3. **Estado e sessão**
-   - Contexto de autenticação centraliza credenciais e sessão.
-   - Persistência via `AsyncStorage`.
+## 5.1 Bootstrap da aplicação
 
-4. **Integração com API**
-   - `Axios` configurado para uso consistente da base URL.
-   - Interceptor adiciona cabeçalhos `x-email` e `x-senha` automaticamente.
+`App.tsx` inicializa:
 
-#### Fluxo de autenticação
+1. carregamento de fontes (`Fredoka`),
+2. providers globais (`AuthProvider`, `ToastProvider`, `ManagementAuthProvider`),
+3. `AppNavigator` com todas as rotas.
 
-1. Professores e alunos realizam login com email e senha.
-2. As credenciais são persistidas via `AsyncStorage`.
-3. As requisições protegidas enviam `x-email` e `x-senha` automaticamente via interceptor do Axios.
-4. Endpoints protegidos validam o papel `professor` no backend.
+## 5.2 Navegação
 
-### Guia de uso
+A navegação combina:
 
-#### Seleção de usuário
+- **Stack Navigator** para fluxo principal e telas de detalhe/formulário.
+- **Bottom Tabs** dinâmicas por perfil de usuário.
 
-1. Abra o app.
-2. Selecione o tipo de usuário.
+Comportamento por perfil:
 
-#### Login professor
+- **Professor** vê abas de Posts + Gerenciamento de posts + Gerenciamento de usuários.
+- **Aluno** vê abas de Posts + Alunos.
 
-1. Informe email e senha.
-2. Toque em **Entrar**.
+As rotas privadas só são registradas quando existe usuário autenticado.
 
-#### Login aluno
+## 5.3 Gerenciamento de estado global
 
-1. Informe nome completo e RM.
-2. Toque em **Entrar**.
+### `AuthContext`
 
-#### Postagens
+Responsável por:
 
-- **Listar posts:** tela inicial com busca.
-- **Ler post:** toque em um item para abrir os detalhes.
-- **Criar/editar/excluir post (docentes):** use os botões de ação na área administrativa.
+- login de professor,
+- acesso de aluno por nome + RM,
+- logout,
+- bootstrap de sessão salva via `AsyncStorage`.
 
-#### Administração (docentes)
+### `ManagementAuthContext`
 
-- **Posts:** criação, edição e exclusão.
-- **Usuários:** cadastro, edição e exclusão de professores e alunos.
+Camada adicional de autorização local para telas de gerenciamento.
 
-### Funcionalidades implementadas
+- Exibe modal pedindo senha de gestão.
+- Libera acesso às telas administrativas apenas quando validado.
+- Reseta autorização ao trocar usuário.
 
-- Lista de posts com busca.
-- Leitura de post.
-- Criação e edição de posts (docentes).
-- Administração de posts (docentes).
-- Cadastro, edição, listagem e exclusão de professores e alunos.
+> Essa camada **não substitui** validações do backend.
 
-### Observações
+### `ToastContext`
 
-- Ajuste a `EXPO_PUBLIC_API_BASE_URL` conforme o ambiente.
+Exibe feedbacks globais de sucesso, informação e erro em formato de toast.
 
-## Arquitetura do sistema
+## 5.4 Camada de serviços
 
-O app segue uma arquitetura em camadas organizada por responsabilidade:
+`src/services/api.ts` configura um cliente Axios com:
 
-- **Apresentação** (`src/screens`): telas e fluxos visuais do aplicativo.
-- **Navegação** (`src/navigation`): stack + tabs e definição dos fluxos.
-- **Estado e sessão** (`src/contexts`): autenticação, persistência de sessão e contexto global.
-- **Integração** (`src/services`): comunicação com a API REST e interceptors.
-- **Tema** (`src/theme`): tokens visuais compartilhados.
+- `baseURL` vinda de `EXPO_PUBLIC_API_BASE_URL`,
+- timeout de requisição,
+- interceptor para anexar credenciais (`x-email` e `x-senha`) quando disponíveis.
 
-O `App.tsx` faz o bootstrap do app, configura providers e inicia a navegação.
+Módulos de serviço:
 
-## Uso da aplicação
+- `auth.ts`
+- `posts.ts`
+- `comments.ts`
+- `users.ts`
 
-1. Configure a variável `EXPO_PUBLIC_API_BASE_URL` apontando para a API.
-2. Inicie o app com `npm run start`.
-3. Faça login com email e senha (professor ou aluno).
-4. Navegue pelos posts usando as abas.
-5. Usuários docentes podem criar/editar posts e gerenciar usuários.
+Essa separação facilita manutenção, testes e evolução da API.
 
-## Experiências e desafios
+## 5.5 Organização de UI
 
-- **Integração com autenticação**: garantir o envio automático de credenciais em rotas protegidas foi central para evitar erros em chamadas repetitivas.
-- **Separação de responsabilidades**: manter navegação, telas e serviços isolados facilitou a evolução do app.
-- **Experiência do usuário**: equilíbrio entre rapidez no acesso aos posts e visibilidade de ações administrativas.
-- **Ajustes de ambiente**: configurar corretamente o `EXPO_PUBLIC_API_BASE_URL` foi essencial para testes locais e em rede.
+- `components/`: componentes de interface reutilizáveis.
+- `screens/`: composição de fluxo por caso de uso.
+- `theme/colors.ts`: paleta central para consistência visual.
+
+---
+
+## 6. Fluxos funcionais
+
+## 6.1 Login e escolha de perfil
+
+Na tela inicial (`LoginScreen`):
+
+- usuário pode escolher **Sou professor** ou **Sou aluno**;
+- caso exista sessão salva, é possível **continuar** ou **trocar usuário**.
+
+## 6.2 Fluxo de professor
+
+- Login com email/senha.
+- Possibilidade de “Primeiro acesso” para criação de senha.
+- Acesso às áreas de gestão (posts e usuários), condicionado ao perfil e autorização adicional de gerenciamento.
+
+## 6.3 Fluxo de aluno
+
+- Acesso com nome e RM.
+- Navegação focada em consumo de conteúdo (lista e leitura de posts).
+
+## 6.4 Gestão de conteúdo e usuários
+
+Para professores:
+
+- CRUD de posts,
+- listagem e manutenção de usuários,
+- formulários com validação e suporte a edição.
+
+---
+
+## 7. Guia de uso rápido
+
+1. Inicie backend e mobile.
+2. Abra o app e escolha o perfil.
+3. Faça login professor (email+senha) ou entre como aluno (nome + RM).
+4. Navegue pelos posts na aba inicial.
+5. Abra um post para leitura completa e comentários.
+6. Se for professor, acesse abas administrativas para gerenciar posts e usuários.
+
+---
+
+## 8. Integração com backend
+
+A aplicação espera endpoints REST compatíveis com:
+
+- autenticação,
+- posts,
+- comentários,
+- usuários (professores/alunos).
+
+Para evitar erro de conexão:
+
+- confirme a URL da API em `EXPO_PUBLIC_API_BASE_URL`;
+- valide se backend está ativo;
+- em dispositivo físico, use IP da rede local (não `localhost`).
+
+---
+
+## 9. Troubleshooting
+
+- **App abre sem dados**: verificar se backend está rodando e URL da API está correta.
+- **Erro de autenticação**: revisar credenciais e headers enviados para API.
+- **Funciona no emulador, mas não no celular**: substituir `localhost` por IP local.
+- **Sessão antiga persistida**: usar opção “Trocar usuário” para limpar sessão ativa.
+
+---
+
+## 10. Melhorias futuras sugeridas
+
+- centralizar validações com schema (ex.: Zod/Yup),
+- incluir testes automatizados (unitários/integrados),
+- suportar refresh token e expiração de sessão,
+- adicionar monitoramento de erros e métricas de uso.

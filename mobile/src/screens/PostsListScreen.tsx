@@ -1,3 +1,4 @@
+// Importa bibliotecas para criar a tela e manipular dados
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -20,6 +21,7 @@ import type { Post } from "../types";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "@react-navigation/native";
 
+// Áreas de conhecimento disponíveis
 const AREAS_CONHECIMENTO = [
   "Linguagens",
   "Matemática",
@@ -28,10 +30,12 @@ const AREAS_CONHECIMENTO = [
   "Tecnologias",
 ];
 
-// Home: 1 destaque + 3 últimas + 3 "você também pode ler" = 7 itens por página.
+// Quantidade de posts por página
 const POSTS_PER_PAGE = 7;
 
+// Componente principal para listar posts
 const PostsListScreen: React.FC = () => {
+  // Navegação e estados para posts, busca, área e paginação
   const navigation = useNavigation<any>();
   const [posts, setPosts] = useState<Post[]>([]);
   const [termo, setTermo] = useState("");
@@ -41,6 +45,7 @@ const PostsListScreen: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
+  // Função para obter timestamp do post
   const getTimestamp = (post: Post) => {
     const dateValue = post.AtualizadoEm || post.CriadoEm;
     const timeValue = post.AtualizadoEmHora || post.CriadoEmHora;
@@ -68,12 +73,13 @@ const PostsListScreen: React.FC = () => {
     return Number.isNaN(date.getTime()) ? 0 : date.getTime();
   };
 
+  // Função para buscar posts
   const loadPosts = useCallback(async (search?: string, selectedArea?: string | null, pageNumber?: number) => {
     setLoading(true);
     try {
       const response = await fetchPosts({ termo: search, page: pageNumber, limit: POSTS_PER_PAGE });
       const basePosts = (response.items ?? []).slice();
-      basePosts.sort((a, b) => getTimestamp(b) - getTimestamp(a));
+      // Removida a ordenação no frontend para confiar na ordenação do backend
       const filtered = selectedArea ? basePosts.filter((item) => item.areaDoConhecimento === selectedArea) : basePosts;
       setPosts(filtered);
       setHasMore(Boolean(response.hasMore));
@@ -84,6 +90,7 @@ const PostsListScreen: React.FC = () => {
     }
   }, []);
 
+  // Efeito para limpar a busca quando o termo é vazio
   useEffect(() => {
     const trimmed = termo.trim();
     // Se limpou a busca, volta imediatamente para o feed normal
@@ -98,6 +105,7 @@ const PostsListScreen: React.FC = () => {
     return () => clearTimeout(t);
   }, [termo]);
 
+  // Efeito para carregar posts com base no termo e área selecionada
   useEffect(() => {
     const area = !debouncedTermo && page > 1 ? null : areaSelecionada;
     loadPosts(debouncedTermo, area, page);
@@ -106,9 +114,12 @@ const PostsListScreen: React.FC = () => {
   // Ao voltar da leitura (onde comentários podem ser criados), atualiza o feed para refletir a nova contagem.
   useFocusEffect(
     useCallback(() => {
-      const area = !debouncedTermo && page > 1 ? null : areaSelecionada;
-      loadPosts(debouncedTermo, area, page);
-    }, [debouncedTermo, areaSelecionada, page, loadPosts])
+      // Limpa busca e filtro de área ao focar na aba Início
+      setTermo("");
+      setAreaSelecionada(null);
+      setPage(1);
+      loadPosts("", null, 1);
+    }, [loadPosts])
   );
 
   const isSearching = debouncedTermo.length > 0;

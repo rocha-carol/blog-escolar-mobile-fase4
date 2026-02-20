@@ -1,15 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+// Importa componentes reutilizáveis
 import AppButton from "../components/AppButton";
 import AppInput from "../components/AppInput";
+// Importa cores do tema
 import colors from "../theme/colors";
+// Importa funções para buscar post e comentários
 import { fetchPost } from "../services/posts";
 import { createComment, fetchComments } from "../services/comments";
 import type { Post } from "../types";
 
+// Componente principal da tela de detalhes do post
 const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
+  // Extrai o id do post e se deve rolar para comentários
   const { postId } = route.params;
   const scrollToComments = Boolean(route?.params?.scrollToComments);
+  // Estados para armazenar dados do post, carregamento, comentários e campos do formulário
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -20,9 +26,10 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
   const [commentMessage, setCommentMessage] = useState("");
   const [didAutoScroll, setDidAutoScroll] = useState(false);
   const [commentsLayoutY, setCommentsLayoutY] = useState<number | null>(null);
+  // Referência para o ScrollView
   const scrollRef = useRef<ScrollView | null>(null);
 
-  // Evita que tokens muito longos (ex.: URLs) estourem a linha e pareçam "cortados".
+  // Função para quebrar palavras longas e evitar problemas de layout
   const softWrapLongTokens = (text: string, maxTokenLen = 28, chunkSize = 18) => {
     const withSpaces = text.split(/(\s+)/);
     return withSpaces
@@ -34,11 +41,13 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
       .join("");
   };
 
+  // Função para mostrar nome do autor ou "Autor desconhecido"
   const getNomeAutor = (item: Post) => {
     if (item.autoria?.trim()) return item.autoria;
     return "Autor desconhecido";
   };
 
+  // Função para formatar datas no padrão brasileiro
   const formatDateBR = (value?: string) => {
     if (!value) return "--";
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
@@ -48,6 +57,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     return parsed.toLocaleDateString("pt-BR");
   };
 
+  // Memoiza informações de datas do post
   const datasInfo = useMemo(() => {
     if (!post) return null;
     const criado = post.CriadoEm;
@@ -60,11 +70,13 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     };
   }, [post]);
 
+  // Memoiza conteúdo formatado do post
   const conteudoFormatado = useMemo(() => {
     if (!post?.conteudo) return "";
     return softWrapLongTokens(post.conteudo);
   }, [post?.conteudo]);
 
+  // Memoiza os parágrafos do post para exibir separados
   const paragrafos = useMemo(() => {
     // Mantém quebras de linha e evita um Text gigante (ajuda em alguns casos de clipping no Android)
     const raw = conteudoFormatado;
@@ -75,6 +87,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
       .filter(Boolean);
   }, [conteudoFormatado]);
 
+  // Busca os dados do post ao abrir a tela
   useEffect(() => {
     const load = async () => {
       try {
@@ -87,6 +100,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     load();
   }, [postId]);
 
+  // Função para buscar comentários do post
   const loadComments = async () => {
     setLoadingComments(true);
     try {
@@ -99,11 +113,13 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     }
   };
 
+  // Busca comentários ao abrir a tela ou mudar o post
   useEffect(() => {
     loadComments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
 
+  // Rola automaticamente para a seção de comentários se solicitado
   useEffect(() => {
     if (!scrollToComments) return;
     if (didAutoScroll) return;
@@ -117,6 +133,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     return () => clearTimeout(t);
   }, [commentsLayoutY, didAutoScroll, scrollToComments]);
 
+  // Função para adicionar novo comentário
   const handleAddComment = async () => {
     const texto = commentMessage.trim();
     const autor = commentAuthor.trim();
@@ -131,6 +148,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     }
   };
 
+  // Exibe indicador de carregamento enquanto busca dados
   if (loading) {
     return (
       <View style={styles.loading}>
@@ -139,6 +157,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     );
   }
 
+  // Exibe mensagem se o post não for encontrado
   if (!post) {
     return (
       <View style={styles.loading}>
@@ -147,14 +166,18 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
     );
   }
 
+  // Renderiza a tela de detalhes do post
   return (
     <ScrollView ref={scrollRef} style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+      {/* Seção principal do post */}
       <View style={styles.heroSection}>
         <View style={styles.postContainer}>
+          {/* Cabeçalho do post */}
           <View style={styles.postHeader}>
             <Text style={styles.title}>{post.titulo}</Text>
           </View>
 
+          {/* Imagem do post ou placeholder */}
           <View style={styles.postMedia}>
             <View style={styles.postImageWrapper}>
               {post.imagem ? (
@@ -165,6 +188,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
             </View>
           </View>
 
+          {/* Metadados do post (área, datas) */}
           <View style={styles.postMeta}>
             <View style={styles.cardRow}>
               <View style={styles.badge}>
@@ -179,6 +203,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
             </View>
           </View>
 
+          {/* Conteúdo do post */}
           <View style={styles.postContent}>
             <View style={styles.contentWrap}>
               {paragrafos.length > 0 ? (
@@ -199,6 +224,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
         </View>
       </View>
 
+      {/* Seção de comentários */}
       <View
         style={styles.commentsSection}
         onLayout={(e) => {
@@ -207,6 +233,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
       >
         <Text style={styles.sectionTitle}>Comentários</Text>
 
+        {/* Campo para nome do autor do comentário */}
         <AppInput
           value={commentAuthor}
           onChangeText={setCommentAuthor}
@@ -215,6 +242,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
           density="compact"
           containerStyle={{ marginBottom: 10 }}
         />
+        {/* Campo para mensagem do comentário */}
         <AppInput
           value={commentMessage}
           onChangeText={setCommentMessage}
@@ -224,8 +252,10 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
           density="compact"
           containerStyle={{ marginBottom: 10 }}
         />
+        {/* Botão para enviar comentário */}
         <AppButton title={loadingComments ? "Carregando..." : "Enviar comentário"} onPress={handleAddComment} />
 
+        {/* Mensagem de carregamento ou lista de comentários */}
         {loadingComments && <Text style={styles.emptyText}>Carregando comentários...</Text>}
 
         {!loadingComments && comments.length === 0 ? (
@@ -244,6 +274,7 @@ const PostDetailsScreen: React.FC<{ route: any }> = ({ route }) => {
   );
 };
 
+// Estilos para cada parte da tela
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -410,4 +441,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Exporta o componente para ser usado em outras telas
 export default PostDetailsScreen;

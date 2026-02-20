@@ -11,6 +11,7 @@ function formatarData(data) {
   const mes = String(d.getMonth() + 1).padStart(2, "0");
   const ano = d.getFullYear();
   return `${dia}/${mes}/${ano}`;
+
 }
 
 function formatarHora(data) {
@@ -56,12 +57,21 @@ class PostsController {
       if (req.query.autor) {
         filtro = { autoria: req.query.autor };
       }
+      // Filtro por termo de busca
+      if (req.query.termo) {
+        const regex = new RegExp(req.query.termo, 'i');
+        filtro.$or = [
+          { titulo: regex },
+          { conteudo: regex },
+          { areaDoConhecimento: regex }
+        ];
+      }
 
       const total = await Posts.countDocuments(filtro);
       const query = Posts.find(filtro)
         .lean()
-        // Mais recente primeiro: prioriza atualizações; se não houver, cai no createdAt.
-        .sort({ updatedAt: -1, createdAt: -1 });
+        // Mais recente primeiro: prioriza posts em destaque; se não houver, cai no createdAt.
+        .sort({ createdAt: -1, destaque: -1 });
 
       const posts = hasPagingParams ? await query.skip(skip).limit(limit) : await query;
 
@@ -78,20 +88,9 @@ class PostsController {
           areaDoConhecimento: post.areaDoConhecimento,
           status: post.status || "publicado",
           imagem: post.imagem,
-          CriadoEm: post.createdAt ? new Date(post.createdAt).toLocaleDateString('pt-BR') : undefined,
-          CriadoEmHora: post.createdAt ? (() => {
-            const d = new Date(post.createdAt);
-            const h = d.getHours().toString().padStart(2, '0');
-            const m = d.getMinutes().toString().padStart(2, '0');
-            return `${h}h${m}`;
-          })() : undefined,
-          AtualizadoEm: atualizado ? new Date(post.updatedAt).toLocaleDateString('pt-BR') : undefined,
-          AtualizadoEmHora: atualizado ? (() => {
-            const d = new Date(post.updatedAt);
-            const h = d.getHours().toString().padStart(2, '0');
-            const m = d.getMinutes().toString().padStart(2, '0');
-            return `${h}h${m}`;
-          })() : undefined,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt || null, // Garante que updatedAt seja incluído mesmo se for null
+          AtualizadoEm: atualizado ? formatarData(post.updatedAt) : undefined,
           comentariosCount
         };
       }));
@@ -276,7 +275,7 @@ class PostsController {
         ]
       })
         .lean()
-        .sort({ updatedAt: -1, createdAt: -1 });
+        .sort({ destaque: -1, createdAt: -1 });
 
       const resultado = posts.map(post => ({
         // compatibilidade com o mobile (que usa _id)
